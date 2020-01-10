@@ -43,8 +43,7 @@ public class GridGraph
         _path = new FindPath();
         path = new FindAPath();
     }
-
-    //REMOVE - A STAR COMPARISON
+    
     public List<Node> GetAStarNeighbours(Node currentNode)
     {
         List<Node> neighbours = new List<Node>();

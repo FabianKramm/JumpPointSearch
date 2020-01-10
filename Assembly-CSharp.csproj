@@ -68,7 +68,6 @@
     <Compile Include="Assets\Scripts\PathFinding2D\FindAPath.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\FindPath.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\GridGraph.cs" />
-    <Compile Include="Assets\Scripts\PathFinding2D\Heap.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\MinHeap.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\Node.cs" />
     <Compile Include="Assets\Scripts\UIController.cs" />

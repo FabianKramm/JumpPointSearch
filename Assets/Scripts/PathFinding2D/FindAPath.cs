@@ -34,7 +34,6 @@ public class FindAPath
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("A* Path - Path found in : " + ts.Milliseconds + " ms");
-            //EventHandler.Instance.Broadcast(new PathTimerEvent(ts.Milliseconds));
             return _RetracePath();
         }
         else
@@ -42,7 +41,6 @@ public class FindAPath
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("A* Path - No path found in : " + ts.Milliseconds + " ms");
-            //EventHandler.Instance.Broadcast(new PathTimerEvent(ts.Milliseconds));
             return null;
         }
     }

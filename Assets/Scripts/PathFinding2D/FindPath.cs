@@ -10,6 +10,7 @@ public class FindPath
 {
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
+    public const int MaxJumpPointDistance = 512;
 
     private Node _startNode;
     private Node _targetNode;
@@ -35,7 +36,6 @@ public class FindPath
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("Jump Point Path - Path found in : " + ts.Milliseconds + " ms");
-            //EventHandler.Instance.Broadcast(new PathTimerEvent(ts.Milliseconds));
             return _RetracePath();
         }
         else
@@ -43,7 +43,6 @@ public class FindPath
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("Jump Point Path - No path found in : " + ts.Milliseconds + " ms");
-            //EventHandler.Instance.Broadcast(new PathTimerEvent(ts.Milliseconds));
             return null;
         }
     }
@@ -125,7 +124,7 @@ public class FindPath
             int xDirection = neighbour.x - currentNode.x;
             int yDirection = neighbour.y - currentNode.y;
 
-            jumpNode = _Jump(neighbour.x, neighbour.y, xDirection, yDirection);
+            jumpNode = _Jump(neighbour.x, neighbour.y, xDirection, yDirection, MaxJumpPointDistance);
             if (jumpNode != null)
                 successors.Add(jumpNode);
         }
@@ -133,10 +132,15 @@ public class FindPath
         return successors;
     }
 
-    private Node _Jump(int posX, int posY, int xDirection, int yDirection)
+    private Node _Jump(int posX, int posY, int xDirection, int yDirection, int depth)
     {
         if (!_grid.IsWalkable(posX, posY))
             return null;
+        if (depth == 0)
+        {
+            _forced = true;
+            return _grid.GetNodeFromIndexUnchecked(posX, posY);
+        }
         if (_targetNode.x == posX && _targetNode.y == posY)
         {
             _forced = true;
@@ -159,7 +163,7 @@ public class FindPath
                 return null;
             }
 
-            if (_Jump(posX + xDirection, posY, xDirection, 0) != null || _Jump(posX, posY + yDirection, 0, yDirection) != null)
+            if (_Jump(posX + xDirection, posY, xDirection, 0, depth - 1) != null || _Jump(posX, posY + yDirection, 0, yDirection, depth - 1) != null)
             {
                 if (!_forced)
                 {
@@ -191,7 +195,7 @@ public class FindPath
             }
         }
 
-       return _Jump(posX + xDirection, posY + yDirection, xDirection, yDirection);
+       return _Jump(posX + xDirection, posY + yDirection, xDirection, yDirection, depth - 1);
     }
 
     private int _GetDistance(Node a, Node b)

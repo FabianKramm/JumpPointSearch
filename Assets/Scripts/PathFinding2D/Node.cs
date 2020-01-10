@@ -1,4 +1,4 @@
-﻿public class Node : IHeapItem<Node>
+﻿public class Node
 {
     public Node parent;
     public int x;
