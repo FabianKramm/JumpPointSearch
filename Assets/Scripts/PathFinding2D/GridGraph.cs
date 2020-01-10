@@ -18,7 +18,8 @@ public class GridGraph
     public int SizeY;
     public int[] Weights;
 
-    private JumpPointSearch _path = null;
+    private AStarSearch astarSearch = null;
+    private JumpPointSearch jpsSearch = null;
     private Dictionary<int, Node> grid = new Dictionary<int, Node>();
 
     public int GridSize
@@ -29,7 +30,6 @@ public class GridGraph
         }
     }
 
-    AStarSearch path;
     public void InitializeGrid(int sizeX, int sizeY)
     {
         SizeX = sizeX;
@@ -37,9 +37,6 @@ public class GridGraph
 
         Weights = new int[GridSize];
         grid = new Dictionary<int, Node>();
-        
-        _path = new JumpPointSearch();
-        path = new AStarSearch();
     }
 
     public void Reset()
@@ -77,19 +74,6 @@ public class GridGraph
         }
 
         return neighbours;
-    }
-
-    public List<Node> GetPath(Vector2Int startPosition, Vector2Int targetPosition)
-    {
-        Node startNode = GetNodeFromIndex(startPosition.x, startPosition.y);
-        Node targetNode = GetNodeFromIndex(targetPosition.x, targetPosition.y);
-
-        if (AStar)
-        {
-            return path.GetPath(this, startNode, targetNode);
-        }
-
-        return _path.GetPath(this, startNode, targetNode);
     }
     
     public Node GetNodeFromIndexUnchecked(int x, int y)

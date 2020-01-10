@@ -12,10 +12,10 @@ public class JumpPointSearch
     public const float LateralCost = 1.0f;
     public const int MaxJumpPointDistance = 512;
 
-    private Node _startNode;
-    private Node _targetNode;
+    private Node startNode;
+    private Node targetNode;
 
-    private GridGraph _grid;
+    private GridGraph grid;
 
     private MinHeap<Node, float> openSet;
     private HashSet<Node> openSetContainer;
@@ -24,19 +24,19 @@ public class JumpPointSearch
 
     public List<Node> GetPath(GridGraph grid, Node startNode, Node targetNode)
     {
-        _startNode = startNode;
-        _targetNode = targetNode;
-        _grid = grid;
+        this.startNode = startNode;
+        this.targetNode = targetNode;
+        this.grid = grid;
 
-        _Initialize();
+        Initialize();
         Stopwatch sw = new Stopwatch();
         sw.Start();
-        if (_CalculateShortestPath())
+        if (CalculateShortestPath())
         {
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("Jump Point Path - Path found in : " + ts.Milliseconds + " ms");
-            return _RetracePath();
+            return RetracePath();
         }
         else
         {
@@ -47,31 +47,31 @@ public class JumpPointSearch
         }
     }
 
-    private void _Initialize()
+    private void Initialize()
     {
         openSet = new MinHeap<Node, float>();
         openSetContainer = new HashSet<Node>();
         closedSet = new HashSet<Node>();
     }
 
-    private bool _CalculateShortestPath()
+    private bool CalculateShortestPath()
     {
         Node currentNode;
 
-        openSet.Add(_startNode, 0);
-        openSetContainer.Add(_startNode);
+        openSet.Add(startNode, 0);
+        openSetContainer.Add(startNode);
 
         while (openSet.Count > 0)
         {
             currentNode = openSet.Remove();
-            if (currentNode == _targetNode)
+            if (currentNode == targetNode)
                 return true;
             if (currentNode == null || closedSet.Contains(currentNode))
                 continue;
 
             openSetContainer.Remove(currentNode);
             closedSet.Add(currentNode);
-            List<Node> Nodes = _GetSuccessors(currentNode);
+            List<Node> Nodes = GetSuccessors(currentNode);
             foreach (Node node in Nodes)
             {
                 if (closedSet.Contains(node))
@@ -82,11 +82,11 @@ public class JumpPointSearch
                 DebugDrawer.DrawCube(new Vector2Int(node.x, node.y), Vector2Int.one, Color.white);
 #endif
 
-                var newGCost = currentNode.gCost + _GetDistance(currentNode, node);
+                var newGCost = currentNode.gCost + GetDistance(currentNode, node);
                 if (newGCost < node.gCost || !openSetContainer.Contains(node))
                 {
                     node.gCost = newGCost;
-                    node.hCost = _GetDistance(node, _targetNode);
+                    node.hCost = GetDistance(node, targetNode);
                     node.parent = currentNode;
 
                     openSet.Add(node, node.fCost);
@@ -100,11 +100,11 @@ public class JumpPointSearch
         return false;
     }
 
-    private List<Node> _RetracePath()
+    private List<Node> RetracePath()
     {
         List<Node> path = new List<Node>();
-        Node currentNode = _targetNode;
-        while (currentNode != _startNode)
+        Node currentNode = targetNode;
+        while (currentNode != startNode)
         {
             path.Add(currentNode);
             currentNode = currentNode.parent;
@@ -114,17 +114,17 @@ public class JumpPointSearch
         return path;
     }
 
-    private List<Node> _GetSuccessors(Node currentNode)
+    private List<Node> GetSuccessors(Node currentNode)
     {
         Node jumpNode;
         List<Node> successors = new List<Node>();
-        List<Node> neighbours = _grid.GetNeighbours(currentNode);
+        List<Node> neighbours = grid.GetNeighbours(currentNode);
         foreach (Node neighbour in neighbours)
         {
             int xDirection = neighbour.x - currentNode.x;
             int yDirection = neighbour.y - currentNode.y;
 
-            jumpNode = _Jump(neighbour.x, neighbour.y, xDirection, yDirection, MaxJumpPointDistance);
+            jumpNode = Jump(neighbour.x, neighbour.y, xDirection, yDirection, MaxJumpPointDistance);
             if (jumpNode != null)
                 successors.Add(jumpNode);
         }
@@ -132,68 +132,68 @@ public class JumpPointSearch
         return successors;
     }
 
-    private Node _Jump(int posX, int posY, int xDirection, int yDirection, int depth)
+    private Node Jump(int posX, int posY, int xDirection, int yDirection, int depth)
     {
-        if (!_grid.IsWalkable(posX, posY))
+        if (!grid.IsWalkable(posX, posY))
             return null;
         if (depth == 0)
         {
             _forced = true;
-            return _grid.GetNodeFromIndexUnchecked(posX, posY);
+            return grid.GetNodeFromIndexUnchecked(posX, posY);
         }
-        if (_targetNode.x == posX && _targetNode.y == posY)
+        if (targetNode.x == posX && targetNode.y == posY)
         {
             _forced = true;
-            return _grid.GetNodeFromIndexUnchecked(posX, posY);
+            return grid.GetNodeFromIndexUnchecked(posX, posY);
         }
 
         _forced = false;
         if (xDirection != 0 && yDirection != 0)
         {
-            if ((!_grid.IsWalkable(posX - xDirection, posY) && _grid.IsWalkable(posX - xDirection, posY + yDirection)) ||
-                (!_grid.IsWalkable(posX, posY - yDirection) && _grid.IsWalkable(posX + xDirection, posY - yDirection)))
+            if ((!grid.IsWalkable(posX - xDirection, posY) && grid.IsWalkable(posX - xDirection, posY + yDirection)) ||
+                (!grid.IsWalkable(posX, posY - yDirection) && grid.IsWalkable(posX + xDirection, posY - yDirection)))
             {
-                return _grid.GetNodeFromIndexUnchecked(posX, posY);
+                return grid.GetNodeFromIndexUnchecked(posX, posY);
             }
 
-            if (_grid.IsWalkable(posX + xDirection, posY + yDirection) && 
-                !_grid.IsWalkable(posX + xDirection, posY) &&
-                !_grid.IsWalkable(posX, posY + yDirection))
+            if (grid.IsWalkable(posX + xDirection, posY + yDirection) && 
+                !grid.IsWalkable(posX + xDirection, posY) &&
+                !grid.IsWalkable(posX, posY + yDirection))
             {
                 return null;
             }
 
-            if (_Jump(posX + xDirection, posY, xDirection, 0, depth - 1) != null || _Jump(posX, posY + yDirection, 0, yDirection, depth - 1) != null)
+            if (Jump(posX + xDirection, posY, xDirection, 0, depth - 1) != null || Jump(posX, posY + yDirection, 0, yDirection, depth - 1) != null)
             {
-                return _grid.GetNodeFromIndexUnchecked(posX, posY);
+                return grid.GetNodeFromIndexUnchecked(posX, posY);
             }
         }
         else
         {
             if (xDirection != 0)
             {
-                if ((_grid.IsWalkable(posX + xDirection, posY + 1) && !_grid.IsWalkable(posX, posY + 1)) ||
-                    (_grid.IsWalkable(posX + xDirection, posY - 1) && !_grid.IsWalkable(posX, posY - 1)))
+                if ((grid.IsWalkable(posX + xDirection, posY + 1) && !grid.IsWalkable(posX, posY + 1)) ||
+                    (grid.IsWalkable(posX + xDirection, posY - 1) && !grid.IsWalkable(posX, posY - 1)))
                 {
                     _forced = true;
-                    return _grid.GetNodeFromIndexUnchecked(posX, posY);
+                    return grid.GetNodeFromIndexUnchecked(posX, posY);
                 }
             }
             else
             {
-                if ((_grid.IsWalkable(posX + 1, posY + yDirection) && !_grid.IsWalkable(posX + 1, posY)) ||
-                    (_grid.IsWalkable(posX - 1, posY + yDirection) && !_grid.IsWalkable(posX - 1, posY)))
+                if ((grid.IsWalkable(posX + 1, posY + yDirection) && !grid.IsWalkable(posX + 1, posY)) ||
+                    (grid.IsWalkable(posX - 1, posY + yDirection) && !grid.IsWalkable(posX - 1, posY)))
                 {
                     _forced = true;
-                    return _grid.GetNodeFromIndexUnchecked(posX, posY);
+                    return grid.GetNodeFromIndexUnchecked(posX, posY);
                 }
             }
         }
 
-       return _Jump(posX + xDirection, posY + yDirection, xDirection, yDirection, depth - 1);
+       return Jump(posX + xDirection, posY + yDirection, xDirection, yDirection, depth - 1);
     }
 
-    private int _GetDistance(Node a, Node b)
+    private int GetDistance(Node a, Node b)
     {
         var dx = Math.Abs(a.x - b.x);
         var dy = Math.Abs(a.y - b.y);

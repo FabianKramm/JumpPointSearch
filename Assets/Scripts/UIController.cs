@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
@@ -87,8 +88,21 @@ public class UIController : MonoBehaviour
             Debug.Log("Couldn't find any start or end position");
             return;
         }
-        
-        var path = memoryGrid.GetPath(start, end);
+
+        List<Node> path;
+        Node startNode = memoryGrid.GetNodeFromIndex(start.x, start.y);
+        Node targetNode = memoryGrid.GetNodeFromIndex(end.x, end.y);
+        if (astar)
+        {
+            var asearch = new AStarSearch();
+            path = asearch.GetPath(memoryGrid, startNode, targetNode);
+        }
+        else
+        {
+            var jpsearch = new JumpPointSearch();
+            path = jpsearch.GetPath(memoryGrid, startNode, targetNode);
+        }
+
         if (path != null)
         {
             foreach (var pathTile in path)

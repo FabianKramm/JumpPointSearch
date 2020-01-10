@@ -11,10 +11,10 @@ public class AStarSearch
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
     
-    private Node _startNode;
-    private Node _targetNode;
+    private Node startNode;
+    private Node targetNode;
 
-    private GridGraph _grid;
+    private GridGraph grid;
 
     private MinHeap<Node, float> openSet;
     private HashSet<Node> openSetContainer;
@@ -22,19 +22,19 @@ public class AStarSearch
 
     public List<Node> GetPath(GridGraph graph, Node startNode, Node targetNode)
     {
-        _startNode = startNode;
-        _targetNode = targetNode;
-        _grid = graph;
+        this.startNode = startNode;
+        this.targetNode = targetNode;
+        grid = graph;
 
-        _Initialize();
+        Initialize();
         Stopwatch sw = new Stopwatch();
         sw.Start();
-        if (_CalculateShortestPath())
+        if (CalculateShortestPath())
         {
             sw.Stop();
             TimeSpan ts = sw.Elapsed;
             UnityEngine.Debug.Log("A* Path - Path found in : " + ts.Milliseconds + " ms");
-            return _RetracePath();
+            return RetracePath();
         }
         else
         {
@@ -45,25 +45,25 @@ public class AStarSearch
         }
     }
 
-    private void _Initialize()
+    private void Initialize()
     {
         openSet = new MinHeap<Node, float>();
         openSetContainer = new HashSet<Node>();
         closedSet = new HashSet<Node>();
     }
 
-    private bool _CalculateShortestPath()
+    private bool CalculateShortestPath()
     {
         Node currentNode;
 
-        openSet.Add(_startNode, 0);
-        openSetContainer.Add(_startNode);
+        openSet.Add(startNode, 0);
+        openSetContainer.Add(startNode);
 
         while (openSet.Count > 0)
         {
             currentNode = openSet.Remove();
 
-            if (currentNode == _targetNode)
+            if (currentNode == targetNode)
                 return true;
             if (closedSet.Contains(currentNode))
                 continue;
@@ -71,9 +71,9 @@ public class AStarSearch
             openSetContainer.Remove(currentNode);
             closedSet.Add(currentNode);
 
-            foreach (Node neighbour in _grid.GetAStarNeighbours(currentNode))
+            foreach (Node neighbour in grid.GetAStarNeighbours(currentNode))
             {
-                if (!_grid.IsWalkable(neighbour.x, neighbour.y) || closedSet.Contains(neighbour))
+                if (!grid.IsWalkable(neighbour.x, neighbour.y) || closedSet.Contains(neighbour))
                     continue;
 
 #if DEBUG_PATHFINDING
@@ -81,11 +81,11 @@ public class AStarSearch
                     DebugDrawer.DrawCube(new Vector2Int(neighbour.x, neighbour.y), Vector2Int.one, Color.white);
 #endif
 
-                int newGCost = currentNode.gCost + _GetDistance(currentNode, neighbour);
+                int newGCost = currentNode.gCost + GetDistance(currentNode, neighbour);
                 if (newGCost < neighbour.gCost || !openSetContainer.Contains(neighbour))
                 {
                     neighbour.gCost = newGCost;
-                    neighbour.hCost = _GetDistance(neighbour, _targetNode);
+                    neighbour.hCost = GetDistance(neighbour, targetNode);
                     neighbour.parent = currentNode;
 
                     openSet.Add(neighbour, neighbour.fCost);
@@ -99,12 +99,12 @@ public class AStarSearch
         return false;
     }
 
-    private List<Node> _RetracePath()
+    private List<Node> RetracePath()
     {
         List<Node> path = new List<Node>();
-        Node currentNode = _targetNode;
+        Node currentNode = targetNode;
 
-        while (currentNode != _startNode)
+        while (currentNode != startNode)
         {
             path.Add(currentNode);
             currentNode = currentNode.parent;
@@ -113,7 +113,7 @@ public class AStarSearch
         return path;
     }
 
-    private int _GetDistance(Node a, Node b)
+    private int GetDistance(Node a, Node b)
     {
         var dx = Math.Abs(a.x - b.x);
         var dy = Math.Abs(a.y - b.y);
