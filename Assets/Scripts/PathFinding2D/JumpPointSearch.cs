@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 
-public class FindPath
+public class JumpPointSearch
 {
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
@@ -82,7 +82,7 @@ public class FindPath
                 DebugDrawer.DrawCube(new Vector2Int(node.x, node.y), Vector2Int.one, Color.white);
 #endif
 
-                int newGCost = currentNode.gCost + _GetDistance(currentNode, node);
+                var newGCost = currentNode.gCost + _GetDistance(currentNode, node);
                 if (newGCost < node.gCost || !openSetContainer.Contains(node))
                 {
                     node.gCost = newGCost;
@@ -165,11 +165,6 @@ public class FindPath
 
             if (_Jump(posX + xDirection, posY, xDirection, 0, depth - 1) != null || _Jump(posX, posY + yDirection, 0, yDirection, depth - 1) != null)
             {
-                if (!_forced)
-                {
-                    throw new NotImplementedException();
-                }
-
                 return _grid.GetNodeFromIndexUnchecked(posX, posY);
             }
         }

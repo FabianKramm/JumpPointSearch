@@ -18,7 +18,7 @@ public class UIController : MonoBehaviour
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
-                var perlin = GetPerlinValue(x, y, 0.5f, 100000f);
+                var perlin = GetPerlinValue(x, y, 0.25f, 100000f);
                 if (perlin < obstacleSlider.value)
                 {
                     grid.SetTile(new Vector3Int(x, y, 0), GridController.active.blocked);
@@ -87,8 +87,7 @@ public class UIController : MonoBehaviour
             Debug.Log("Couldn't find any start or end position");
             return;
         }
-
-        // Test
+        
         var path = memoryGrid.GetPath(start, end);
         if (path != null)
         {
@@ -106,5 +105,8 @@ public class UIController : MonoBehaviour
                 DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
             }
         }
+
+        // Return nodes to pool
+        memoryGrid.Reset();
     }
 }

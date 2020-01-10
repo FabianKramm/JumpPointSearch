@@ -27,10 +27,19 @@
         }
     }
 
+    public Node() { }
+
     public Node(int _x, int _y)
     {
         x = _x;
         y = _y;
+    }
+
+    public void Reset()
+    {
+        gCost = 0;
+        hCost = 0;
+        parent = null;
     }
 
     public int CompareTo(Node nodeToCompare)

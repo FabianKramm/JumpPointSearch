@@ -1,8 +1,6 @@
 ﻿#define DEBUG_PATHFINDING
 
 using UnityEngine;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -20,7 +18,7 @@ public class GridGraph
     public int SizeY;
     public int[] Weights;
 
-    private FindPath _path = null;
+    private JumpPointSearch _path = null;
     private Dictionary<int, Node> grid = new Dictionary<int, Node>();
 
     public int GridSize
@@ -31,7 +29,7 @@ public class GridGraph
         }
     }
 
-    FindAPath path;
+    AStarSearch path;
     public void InitializeGrid(int sizeX, int sizeY)
     {
         SizeX = sizeX;
@@ -40,8 +38,17 @@ public class GridGraph
         Weights = new int[GridSize];
         grid = new Dictionary<int, Node>();
         
-        _path = new FindPath();
-        path = new FindAPath();
+        _path = new JumpPointSearch();
+        path = new AStarSearch();
+    }
+
+    public void Reset()
+    {
+        foreach(var node in grid.Values)
+        {
+            node.Reset();
+            NodePool.ReturnToPool(node);
+        }
     }
     
     public List<Node> GetAStarNeighbours(Node currentNode)
@@ -92,6 +99,7 @@ public class GridGraph
             return node;
 
         grid[arrayPos] = new Node(x, y);
+        // grid[arrayPos] = NodePool.NewNode(x, y);
         return grid[arrayPos];
     }
 
@@ -105,6 +113,7 @@ public class GridGraph
             return node;
 
         grid[arrayPos] = new Node(x, y);
+        // grid[arrayPos] = NodePool.NewNode(x, y);
         return grid[arrayPos];
     }
 
@@ -174,6 +183,7 @@ public class GridGraph
         return neighbours;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsWalkable(int x, int y)
     {
         return (x >= 0 && x < SizeX) && (y >= 0 && y < SizeY) && Weights[x * SizeY + y] != 0;

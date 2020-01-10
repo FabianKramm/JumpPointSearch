@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 
-public class FindAPath
+public class AStarSearch
 {
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
