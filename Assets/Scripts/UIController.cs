@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Pathfinding;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
@@ -172,7 +173,7 @@ public class UIController : MonoBehaviour
 
     internal class BenchmarkParameter
     {
-        public GridGraph grid;
+        public ArrayGrid grid;
         public int iterations;
     }
 
@@ -188,7 +189,7 @@ public class UIController : MonoBehaviour
         });
     }
 
-    private GridGraph createGraph()
+    private ArrayGrid createGraph()
     {
         // Convert visible grid to memory grid
         var grid = GridController.Ground;
@@ -197,13 +198,11 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
-        var memoryGrid = new GridGraph();
-        memoryGrid.InitializeGrid(sizeX, sizeY);
-
+        var memoryGrid = new ArrayGrid(sizeX, sizeY);
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
-                var index = memoryGrid.gridToArrayPos(x, y);
+                var index = memoryGrid.GridToArrayPos(x, y);
                 var tile = grid.GetTile(new Vector3Int(x, y, 0));
                 if (tile == GridController.active.blocked)
                 {
