@@ -6,8 +6,8 @@ using System;
 
 public class AStarSearch
 {
-    public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
-    public const float LateralCost = 1.0f;
+    public static readonly float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
+    public static readonly float LateralCost = 1.0f; 
 
     public bool showDebug = true;
 
@@ -56,7 +56,7 @@ public class AStarSearch
                 if (neighborNode == null || neighborNode.isClosed())
                     continue;
 
-                int newGCost = currentNode.gCost + GetDistance(currentNode, neighborNode); // * grid.Weights[grid.gridToArrayPos(neighborNode.x, neighborNode.y)];
+                int newGCost = (int)(currentNode.gCost + Diagonal(currentNode, neighborNode));
                 if (newGCost < neighborNode.gCost || !neighborNode.isOpen())
                 {
 #if DEBUG_PATHFINDING
@@ -68,7 +68,7 @@ public class AStarSearch
 #endif
 
                     neighborNode.gCost = newGCost;
-                    neighborNode.hCost = GetDistance(neighborNode, targetNode);
+                    neighborNode.hCost = Diagonal(neighborNode, targetNode);
                     neighborNode.parent = currentNode;
 
                     if (!neighborNode.isOpen())
@@ -129,11 +129,19 @@ public class AStarSearch
         return GetNodeFromIndexUnchecked(x, y);
     }
 
-    private int GetDistance(Node a, Node b)
+    private int Diagonal(Node a, Node b)
     {
         var dx = Math.Abs(a.x - b.x);
         var dy = Math.Abs(a.y - b.y);
 
         return (int)(LateralCost * (dx + dy) + (DiagonalCost - 2 * LateralCost) * Math.Min(dx, dy));
+    }
+
+    private int Manhattan(Node a, Node b)
+    {
+        var dx = Math.Abs(a.x - b.x);
+        var dy = Math.Abs(a.y - b.y);
+
+        return dx + dy;
     }
 }

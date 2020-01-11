@@ -5,9 +5,36 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
+    public float walkableWeight = 1;
+    public float roadWeight = 0.25f;
+
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
         return Mathf.PerlinNoise((x + offset) * scale, (y + offset) * scale);
+    }
+
+    public void RandomStartEnd()
+    {
+        GridController.Path.ClearAllTiles();
+        var sizeX = GridController.active.size.x;
+        var sizeY = GridController.active.size.y;
+
+        var r = new System.Random();
+        Vector3Int start;
+        Vector3Int end;
+        var i = 0;
+        do
+        {
+            start = new Vector3Int(r.Next(0, sizeX), r.Next(0, sizeY), 0);
+            end = new Vector3Int(r.Next(0, sizeX), r.Next(0, sizeY), 0);
+            i++;
+            if (i > 100)
+                return;
+
+        } while (GridController.Ground.GetTile(start) == GridController.active.blocked || GridController.Ground.GetTile(end) == GridController.active.blocked);
+
+        GridController.Path.SetTile(start, GridController.active.start);
+        GridController.Path.SetTile(end, GridController.active.end);
     }
 
     public void RandomRoads()
@@ -184,11 +211,11 @@ public class UIController : MonoBehaviour
                 }
                 else if (tile == GridController.active.road)
                 {
-                    memoryGrid.Weights[index] = 1;
+                    memoryGrid.Weights[index] = roadWeight;
                 }
                 else if (tile == GridController.active.walkable)
                 {
-                    memoryGrid.Weights[index] = 2;
+                    memoryGrid.Weights[index] = walkableWeight;
                 }
             }
 
@@ -218,7 +245,6 @@ public class UIController : MonoBehaviour
             {
                 start = new Vector3Int(r.Next(0, benchmarkParameter.grid.SizeX), r.Next(0, benchmarkParameter.grid.SizeY), 0);
                 end = new Vector3Int(r.Next(0, benchmarkParameter.grid.SizeX), r.Next(0, benchmarkParameter.grid.SizeY), 0);
-
             } while (!grid.IsWalkable(start.x, start.y) || !grid.IsWalkable(end.x, end.y));
 
             // Run A* Search

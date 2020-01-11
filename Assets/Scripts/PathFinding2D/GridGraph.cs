@@ -14,7 +14,7 @@ public class GridGraph
 
     public int SizeX;
     public int SizeY;
-    public int[] Weights;
+    public float[] Weights;
 
     public int GridSize
     {
@@ -29,7 +29,7 @@ public class GridGraph
         SizeX = sizeX;
         SizeY = sizeY;
 
-        Weights = new int[GridSize];
+        Weights = new float[GridSize];
     }
 
     public int GetAStarNeighbours(Node currentNode, Position[] neighbors)

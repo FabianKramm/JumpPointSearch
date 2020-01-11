@@ -1,8 +1,4 @@
-﻿#define DEBUG_PATHFINDING
-
-using UnityEngine;
-
-public class JumpPointSearch : AStarSearch
+﻿public class JumpPointSearch : AStarSearch
 {
     private static readonly int MaxJumpPointDistance = 256;
 
