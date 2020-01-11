@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 
-public class JumpPointSearch
+public class WeightedJumpPointSearch
 {
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
@@ -151,7 +151,7 @@ public class JumpPointSearch
                 return grid.GetNodeFromIndexUnchecked(posX, posY);
             }
 
-            if (grid.IsWalkable(posX + xDirection, posY + yDirection) && 
+            if (grid.IsWalkable(posX + xDirection, posY + yDirection) &&
                 !grid.IsWalkable(posX + xDirection, posY) &&
                 !grid.IsWalkable(posX, posY + yDirection))
             {
@@ -185,7 +185,7 @@ public class JumpPointSearch
             }
         }
 
-       return Jump(posX + xDirection, posY + yDirection, xDirection, yDirection, depth - 1);
+        return Jump(posX + xDirection, posY + yDirection, xDirection, yDirection, depth - 1);
     }
 
     private int GetDistance(Node a, Node b)

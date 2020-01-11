@@ -10,6 +10,8 @@ public class AStarSearch
 {
     public const float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
     public const float LateralCost = 1.0f;
+
+    public bool showDebug = true;
     
     private Node startNode;
     private Node targetNode;
@@ -27,22 +29,12 @@ public class AStarSearch
         grid = graph;
 
         Initialize();
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
         if (CalculateShortestPath())
         {
-            sw.Stop();
-            TimeSpan ts = sw.Elapsed;
-            UnityEngine.Debug.Log("A* Path - Path found in : " + ts.Milliseconds + " ms");
             return RetracePath();
         }
-        else
-        {
-            sw.Stop();
-            TimeSpan ts = sw.Elapsed;
-            UnityEngine.Debug.Log("A* Path - No path found in : " + ts.Milliseconds + " ms");
-            return null;
-        }
+
+        return null;
     }
 
     private void Initialize()
@@ -77,8 +69,11 @@ public class AStarSearch
                     continue;
 
 #if DEBUG_PATHFINDING
+                if (showDebug)
+                {
                     DebugDrawer.Draw(new Vector2Int(currentNode.x, currentNode.y), new Vector2Int(neighbour.x, neighbour.y), Color.white);
                     DebugDrawer.DrawCube(new Vector2Int(neighbour.x, neighbour.y), Vector2Int.one, Color.white);
+                }
 #endif
 
                 int newGCost = currentNode.gCost + GetDistance(currentNode, neighbour);

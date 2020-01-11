@@ -6,8 +6,6 @@ using System.Runtime.CompilerServices;
 
 public class GridGraph
 {
-    public bool AStar;
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int gridToArrayPos(int x, int y)
     {
@@ -17,9 +15,6 @@ public class GridGraph
     public int SizeX;
     public int SizeY;
     public int[] Weights;
-
-    private AStarSearch astarSearch = null;
-    private JumpPointSearch jpsSearch = null;
     private Dictionary<int, Node> grid = new Dictionary<int, Node>();
 
     public int GridSize
