@@ -3,19 +3,12 @@
     public Node parent;
     public int x;
     public int y;
+    public uint _flags;
 
-    private int _heapIndex = 0;
-    public int HeapIndex
-    {
-        get
-        {
-            return _heapIndex;
-        }
-        set
-        {
-            _heapIndex = value;
-        }
-    }
+    public void setOpen() { _flags |= 1; }
+    public void setClosed() { _flags |= 2; }
+    public bool isOpen() { return (_flags & 1) == 1; }
+    public bool isClosed() { return (_flags & 2) == 2; }
 
     public int gCost;
     public int hCost;
@@ -40,16 +33,6 @@
         gCost = 0;
         hCost = 0;
         parent = null;
-    }
-
-    public int CompareTo(Node nodeToCompare)
-    {
-        int compare = fCost.CompareTo(nodeToCompare.fCost);
-        if (compare == 0)
-        {
-            compare = hCost.CompareTo(nodeToCompare.hCost);
-        }
-        return -compare;
     }
 
     public override string ToString()

@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\PathFinding2D\Node.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\NodePool.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\ObjectPool.cs" />
+    <Compile Include="Assets\Scripts\PathFinding2D\Position.cs" />
     <Compile Include="Assets\Scripts\PathFinding2D\WeightedJumpPointSearch.cs" />
     <Compile Include="Assets\Scripts\UIController.cs" />
     <Reference Include="Unity.Timeline.Editor">

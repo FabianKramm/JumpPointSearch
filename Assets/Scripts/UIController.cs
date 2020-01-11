@@ -109,22 +109,19 @@ public class UIController : MonoBehaviour
         }
 
         List<Node> path;
-        Node startNode = memoryGrid.GetNodeFromIndex(start.x, start.y);
-        Node targetNode = memoryGrid.GetNodeFromIndex(end.x, end.y);
-
         System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
         if (astar)
         {
             var asearch = new AStarSearch();
             sw.Start();
-            path = asearch.GetPath(memoryGrid, startNode, targetNode);
+            path = asearch.GetPath(memoryGrid, start, end);
             UnityEngine.Debug.Log("A* Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
         }
         else
         {
             var jpsearch = new JumpPointSearch();
             sw.Start();
-            path = jpsearch.GetPath(memoryGrid, startNode, targetNode);
+            path = jpsearch.GetPath(memoryGrid, start, end);
             UnityEngine.Debug.Log("JPS Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
         }
 
@@ -144,9 +141,6 @@ public class UIController : MonoBehaviour
                 DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
             }
         }
-
-        // Return nodes to pool
-        memoryGrid.Reset();
     }
 
     internal class BenchmarkParameter
@@ -227,18 +221,14 @@ public class UIController : MonoBehaviour
 
             } while (!grid.IsWalkable(start.x, start.y) || !grid.IsWalkable(end.x, end.y));
 
-
-            var startNode = grid.GetNodeFromIndex(start.x, start.y);
-            var targetNode = grid.GetNodeFromIndex(end.x, end.y);
-
             // Run A* Search
             stopwatch.Restart();
-            astar.GetPath(grid, startNode, targetNode);
+            astar.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
             astarTime += stopwatch.ElapsedMilliseconds;
 
             // Run Jump Point Search
             stopwatch.Restart();
-            jps.GetPath(grid, startNode, targetNode);
+            jps.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
             jpsTime += stopwatch.ElapsedMilliseconds;
 
             if (i % 100 == 0)

@@ -90,9 +90,23 @@ public class MinHeap<TData, TCost> where TCost : IComparable<TCost>
 
         m_items[m_count].Set(item, cost);
 
-        bubbleUp();
+        bubbleUp(m_count);
 
         m_count++;
+    }
+
+    public void Update(TData item, TCost cost)
+    {
+        for (int i = 0; i < m_count; i++)
+        {
+            if (m_items[i].Data.Equals(item))
+            {
+                m_items[i].Cost = cost;
+                bubbleDown(i);
+                bubbleUp(i);
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -128,7 +142,7 @@ public class MinHeap<TData, TCost> where TCost : IComparable<TCost>
         m_items[0] = m_items[m_count];
         m_items[m_count].Data = default(TData); // Clears the Last Node
 
-        bubbleDown();
+        bubbleDown(0);
 
         return v;
     }
@@ -147,9 +161,11 @@ public class MinHeap<TData, TCost> where TCost : IComparable<TCost>
         }
     }
 
-    private void bubbleUp()
+    private void bubbleUp(int index)
     {
-        var index = m_count;
+        if (index == 0)
+            return;
+
         var item = m_items[index];
         var parent = (index - 1) >> 1;
 
@@ -163,10 +179,9 @@ public class MinHeap<TData, TCost> where TCost : IComparable<TCost>
         m_items[index] = item;
     }
 
-    private void bubbleDown()
+    private void bubbleDown(int index)
     {
-        var index = 0;
-        var parent = 0;
+        var parent = index == 0 ? 0 : (index - 1) >> 1;
         var item = m_items[parent];
 
         while (true)

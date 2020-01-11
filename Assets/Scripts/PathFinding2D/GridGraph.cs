@@ -15,7 +15,6 @@ public class GridGraph
     public int SizeX;
     public int SizeY;
     public int[] Weights;
-    private Dictionary<int, Node> grid = new Dictionary<int, Node>();
 
     public int GridSize
     {
@@ -31,21 +30,11 @@ public class GridGraph
         SizeY = sizeY;
 
         Weights = new int[GridSize];
-        grid = new Dictionary<int, Node>();
     }
 
-    public void Reset()
+    public int GetAStarNeighbours(Node currentNode, Position[] neighbors)
     {
-        foreach(var node in grid.Values)
-        {
-            node.Reset();
-            NodePool.ReturnToPool(node);
-        }
-    }
-    
-    public List<Node> GetAStarNeighbours(Node currentNode)
-    {
-        List<Node> neighbours = new List<Node>();
+        int count = 0;
         for (int x = -1; x <= 1; x++)
         {
             for (int y = -1; y <= 1; y++)
@@ -63,48 +52,24 @@ public class GridGraph
                         }
                     }
 
-                    neighbours.Add(GetNodeFromIndexUnchecked(x + currentNode.x, y + currentNode.y));
+                    neighbors[count] = new Position(x + currentNode.x, y + currentNode.y);
+                    count++;
                 }
             }
         }
 
-        return neighbours;
-    }
-    
-    public Node GetNodeFromIndexUnchecked(int x, int y)
-    {
-        var arrayPos = gridToArrayPos(x, y);
-        if (grid.TryGetValue(arrayPos, out Node node))
-            return node;
-
-        grid[arrayPos] = new Node(x, y);
-        // grid[arrayPos] = NodePool.NewNode(x, y);
-        return grid[arrayPos];
+        return count;
     }
 
-    public Node GetNodeFromIndex(int x, int y)
-    {
-        if (!IsWalkable(x, y))
-            return null;
-
-        var arrayPos = gridToArrayPos(x, y);
-        if (grid.TryGetValue(arrayPos, out Node node))
-            return node;
-
-        grid[arrayPos] = new Node(x, y);
-        // grid[arrayPos] = NodePool.NewNode(x, y);
-        return grid[arrayPos];
-    }
-
-    public List<Node> GetNeighbours(Node currentNode)
+    public int GetNeighbours(Node currentNode, Position[] neighbors)
     {
         Node parentNode = currentNode.parent;
         if (parentNode == null)
         {
-            return GetAStarNeighbours(currentNode);
+            return GetAStarNeighbours(currentNode, neighbors);
         }
 
-        List<Node> neighbours = new List<Node>();
+        int count = 0;
         int xDirection = Mathf.Clamp(currentNode.x - parentNode.x, -1, 1);
         int yDirection = Mathf.Clamp(currentNode.y - parentNode.y, -1, 1);
         if (xDirection != 0 && yDirection != 0)
@@ -116,22 +81,30 @@ public class GridGraph
             bool neighbourDown = IsWalkable(currentNode.x, currentNode.y - yDirection);
 
             if (neighbourUp)
-                neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x, currentNode.y + yDirection));
-
+            {
+                neighbors[count] = new Position(currentNode.x, currentNode.y + yDirection);
+                count++;
+            }
             if (neighbourRight)
-                neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y));
-
-            if (neighbourUp || neighbourRight)
-                if (IsWalkable(currentNode.x + xDirection, currentNode.y + yDirection))
-                    neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y + yDirection));
-
-            if (!neighbourLeft && neighbourUp)
-                if (IsWalkable(currentNode.x - xDirection, currentNode.y + yDirection))
-                    neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x - xDirection, currentNode.y + yDirection));
-
-            if (!neighbourDown && neighbourRight)
-                if (IsWalkable(currentNode.x + xDirection, currentNode.y - yDirection))
-                    neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y - yDirection));
+            {
+                neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y);
+                count++;
+            }
+            if ((neighbourUp || neighbourRight) && IsWalkable(currentNode.x + xDirection, currentNode.y + yDirection))
+            {
+                neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y + yDirection);
+                count++;
+            }
+            if (!neighbourLeft && neighbourUp && IsWalkable(currentNode.x - xDirection, currentNode.y + yDirection))
+            {
+                neighbors[count] = new Position(currentNode.x - xDirection, currentNode.y + yDirection);
+                count++;
+            }
+            if (!neighbourDown && neighbourRight && IsWalkable(currentNode.x + xDirection, currentNode.y - yDirection))
+            {
+                neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y - yDirection);
+                count++;
+            }
         }
         else
         {
@@ -139,27 +112,43 @@ public class GridGraph
             {
                 if (IsWalkable(currentNode.x, currentNode.y + yDirection))
                 {
-                    neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x, currentNode.y + yDirection));
+                    neighbors[count] = new Position(currentNode.x, currentNode.y + yDirection);
+                    count++;
+                    
                     if (!IsWalkable(currentNode.x + 1, currentNode.y) && IsWalkable(currentNode.x + 1, currentNode.y + yDirection))
-                        neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + 1, currentNode.y + yDirection));
+                    {
+                        neighbors[count] = new Position(currentNode.x + 1, currentNode.y + yDirection);
+                        count++;
+                    }
                     if (!IsWalkable(currentNode.x - 1, currentNode.y) && IsWalkable(currentNode.x - 1, currentNode.y + yDirection))
-                        neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x - 1, currentNode.y + yDirection));
+                    {
+                        neighbors[count] = new Position(currentNode.x - 1, currentNode.y + yDirection);
+                        count++;
+                    }
                 }
             }
             else
             {
                 if (IsWalkable(currentNode.x + xDirection, currentNode.y))
                 {
-                    neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y));
+                    neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y);
+                    count++;
+                    
                     if (!IsWalkable(currentNode.x, currentNode.y + 1) && IsWalkable(currentNode.x + xDirection, currentNode.y + 1))
-                        neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y + 1));
+                    {
+                        neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y + 1);
+                        count++;
+                    }
                     if (!IsWalkable(currentNode.x, currentNode.y - 1) && IsWalkable(currentNode.x + xDirection, currentNode.y - 1))
-                        neighbours.Add(GetNodeFromIndexUnchecked(currentNode.x + xDirection, currentNode.y - 1));
+                    {
+                        neighbors[count] = new Position(currentNode.x + xDirection, currentNode.y - 1);
+                        count++;
+                    }
                 }
             }
         }
 
-        return neighbours;
+        return count;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

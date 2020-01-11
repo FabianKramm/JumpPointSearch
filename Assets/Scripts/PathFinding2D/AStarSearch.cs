@@ -1,10 +1,8 @@
 ﻿#define DEBUG_PATHFINDING
 
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System;
-using System.Diagnostics;
 
 public class AStarSearch
 {
@@ -12,23 +10,23 @@ public class AStarSearch
     public const float LateralCost = 1.0f;
 
     public bool showDebug = true;
-    
-    private Node startNode;
-    private Node targetNode;
 
-    private GridGraph grid;
+    protected Node startNode;
+    protected Node targetNode;
 
-    private MinHeap<Node, float> openSet;
-    private HashSet<Node> openSetContainer;
-    private HashSet<Node> closedSet;
+    protected GridGraph grid;
 
-    public List<Node> GetPath(GridGraph graph, Node startNode, Node targetNode)
+    protected MinHeap<Node, float> heap;
+    protected Dictionary<int, Node> nodes;
+
+    public List<Node> GetPath(GridGraph grid, Vector2Int start, Vector2Int target)
     {
-        this.startNode = startNode;
-        this.targetNode = targetNode;
-        grid = graph;
+        this.grid = grid;
+        heap = new MinHeap<Node, float>();
+        nodes = new Dictionary<int, Node>();
+        startNode = GetNodeFromIndexUnchecked(start.x, start.y);
+        targetNode = GetNodeFromIndexUnchecked(target.x, target.y);
 
-        Initialize();
         if (CalculateShortestPath())
         {
             return RetracePath();
@@ -37,61 +35,65 @@ public class AStarSearch
         return null;
     }
 
-    private void Initialize()
-    {
-        openSet = new MinHeap<Node, float>();
-        openSetContainer = new HashSet<Node>();
-        closedSet = new HashSet<Node>();
-    }
-
     private bool CalculateShortestPath()
     {
         Node currentNode;
+        Position[] neighbors = new Position[8];
 
-        openSet.Add(startNode, 0);
-        openSetContainer.Add(startNode);
-
-        while (openSet.Count > 0)
+        heap.Add(startNode, 0);
+        while (heap.Count > 0)
         {
-            currentNode = openSet.Remove();
-
+            currentNode = heap.Remove();
             if (currentNode == targetNode)
                 return true;
-            if (closedSet.Contains(currentNode))
-                continue;
 
-            openSetContainer.Remove(currentNode);
-            closedSet.Add(currentNode);
-
-            foreach (Node neighbour in grid.GetAStarNeighbours(currentNode))
+            currentNode.setClosed();
+            var count = GetNeighbors(currentNode, neighbors);
+            for (var i = 0; i < count; i++)
             {
-                if (!grid.IsWalkable(neighbour.x, neighbour.y) || closedSet.Contains(neighbour))
+                var neighbor = neighbors[i];
+                var neighborNode = GetNeighborNode(currentNode, neighbor);
+                if (neighborNode == null || neighborNode.isClosed())
                     continue;
 
-#if DEBUG_PATHFINDING
-                if (showDebug)
+                int newGCost = currentNode.gCost + GetDistance(currentNode, neighborNode); // * grid.Weights[grid.gridToArrayPos(neighborNode.x, neighborNode.y)];
+                if (newGCost < neighborNode.gCost || !neighborNode.isOpen())
                 {
-                    DebugDrawer.Draw(new Vector2Int(currentNode.x, currentNode.y), new Vector2Int(neighbour.x, neighbour.y), Color.white);
-                    DebugDrawer.DrawCube(new Vector2Int(neighbour.x, neighbour.y), Vector2Int.one, Color.white);
-                }
+#if DEBUG_PATHFINDING
+                    if (showDebug)
+                    {
+                        DebugDrawer.Draw(new Vector2Int(currentNode.x, currentNode.y), new Vector2Int(neighborNode.x, neighborNode.y), Color.white);
+                        DebugDrawer.DrawCube(new Vector2Int(neighborNode.x, neighborNode.y), Vector2Int.one, Color.white);
+                    }
 #endif
 
-                int newGCost = currentNode.gCost + GetDistance(currentNode, neighbour);
-                if (newGCost < neighbour.gCost || !openSetContainer.Contains(neighbour))
-                {
-                    neighbour.gCost = newGCost;
-                    neighbour.hCost = GetDistance(neighbour, targetNode);
-                    neighbour.parent = currentNode;
+                    neighborNode.gCost = newGCost;
+                    neighborNode.hCost = GetDistance(neighborNode, targetNode);
+                    neighborNode.parent = currentNode;
 
-                    openSet.Add(neighbour, neighbour.fCost);
-                    if (!openSetContainer.Contains(neighbour))
+                    if (!neighborNode.isOpen())
                     {
-                        openSetContainer.Add(neighbour);
+                        heap.Add(neighborNode, neighborNode.gCost + neighborNode.hCost);
+                        neighborNode.setOpen();
+                    }
+                    else
+                    {
+                        heap.Update(neighborNode, neighborNode.gCost + neighborNode.hCost);
                     }
                 }
             }
         }
         return false;
+    }
+
+    protected virtual Node GetNeighborNode(Node currentNode, Position neighbor)
+    {
+        return GetNodeFromIndexUnchecked(neighbor.x, neighbor.y);
+    }
+
+    protected virtual int GetNeighbors(Node currentNode, Position[] neighbors)
+    {
+        return grid.GetAStarNeighbours(currentNode, neighbors);
     }
 
     private List<Node> RetracePath()
@@ -106,6 +108,25 @@ public class AStarSearch
         }
         path.Reverse();
         return path;
+    }
+
+    protected Node GetNodeFromIndexUnchecked(int x, int y)
+    {
+        var arrayPos = grid.gridToArrayPos(x, y);
+        if (nodes.TryGetValue(arrayPos, out Node node))
+            return node;
+
+        nodes[arrayPos] = new Node(x, y);
+        // grid[arrayPos] = NodePool.NewNode(x, y);
+        return nodes[arrayPos];
+    }
+
+    protected Node GetNodeFromIndex(int x, int y)
+    {
+        if (!grid.IsWalkable(x, y))
+            return null;
+
+        return GetNodeFromIndexUnchecked(x, y);
     }
 
     private int GetDistance(Node a, Node b)
