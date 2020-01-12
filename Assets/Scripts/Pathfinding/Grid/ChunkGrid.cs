@@ -44,8 +44,7 @@ namespace Pathfinding
         {
             chunks[chunkX * chunkRows + chunkY] = chunk;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public bool IsWalkable(int x, int y)
         {
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
@@ -64,6 +63,16 @@ namespace Pathfinding
                 chunks[chunkPos] = new Chunk((int)chunkSize);
 
             chunks[chunkPos].Weights[arrayPos - chunkPos * chunkMagnitude] = weight;
+        }
+
+        public int GetWeight(int x, int y)
+        {
+            if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
+                return -1;
+
+            long arrayPos = x * SizeY + y;
+            long chunkPos = arrayPos / chunkMagnitude;
+            return chunks[chunkPos].Weights[arrayPos - chunkPos * chunkMagnitude];
         }
 
         public Position GetSize()

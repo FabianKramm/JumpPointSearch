@@ -198,7 +198,7 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
-        var memoryGrid = new ArrayGrid(sizeX, sizeY);
+        var memoryGrid = new ChunkGrid(sizeX, sizeY, 128);
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
