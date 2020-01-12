@@ -6,12 +6,12 @@ namespace Pathfinding
     {
         private static readonly int MaxJumpPointDistance = 128;
 
-        protected override int GetNeighbors(Node currentNode, Position[] neighbors)
+        protected override int GetNeighbors(Node currentNode, ref Position[] neighbors)
         {
             Node parentNode = currentNode.parent;
             if (parentNode == null)
             {
-                return base.GetNeighbors(currentNode, neighbors);
+                return base.GetNeighbors(currentNode, ref neighbors);
             }
 
             int count = 0;

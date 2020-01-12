@@ -97,6 +97,86 @@ public class UIController : MonoBehaviour
             }
     }
 
+    public void Clear()
+    {
+        DebugDrawer.Clear();
+    }
+
+    public void FindSubGoalPath()
+    {
+        DebugDrawer.Clear();
+
+        // Convert visible grid to memory grid
+        var grid = GridController.Ground;
+        var pathGrid = GridController.Path;
+
+        var sizeX = GridController.active.size.x;
+        var sizeY = GridController.active.size.y;
+
+        var memoryGrid = createGraph();
+        // Set grid weights
+        var start = new Vector2Int(-1, -1);
+        var end = new Vector2Int(-1, -1);
+
+        for (var x = 0; x < sizeX; x++)
+            for (var y = 0; y < sizeY; y++)
+            {
+                var pathTile = pathGrid.GetTile(new Vector3Int(x, y, 0));
+                if (pathTile != null)
+                {
+                    if (pathTile == GridController.active.start)
+                    {
+                        start = new Vector2Int(x, y);
+                    }
+                    else if (pathTile == GridController.active.end)
+                    {
+                        end = new Vector2Int(x, y);
+                    }
+                }
+            }
+
+        if (start.x == -1 || end.x == -1)
+        {
+            Debug.Log("Couldn't find any start or end position");
+            return;
+        }
+
+        // List<Node> path;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+
+        SubGoalGrid sgg = new SubGoalGrid(memoryGrid);
+        sgg.ConstructSubgoals(0, 0, sizeX, sizeY);
+        sgg.ConstructEdges(0, 0, sizeX, sizeY);
+
+        sw.Stop();
+        Debug.Log("Preprocessing took " + sw.ElapsedMilliseconds + "ms");
+        // sgg.DrawSubGoals();
+
+        List<Node> path;
+        var subGoalSearch = new SubGoalSearch();
+        sw.Restart();
+        path = subGoalSearch.GetPath(sgg, start, end);
+        UnityEngine.Debug.Log("SubGoalSearch Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+
+        if (path != null)
+        {
+            foreach (var pathTile in path)
+            {
+                if (pathTile.x == start.x && pathTile.y == start.y)
+                    continue;
+                if (pathTile.x == end.x && pathTile.y == end.y)
+                    continue;
+
+                if (pathTile.parent != null)
+                {
+                    DebugDrawer.Draw(new Vector2Int(pathTile.parent.x, pathTile.parent.y), new Vector2Int(pathTile.x, pathTile.y), Color.blue);
+                }
+                DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
+            }
+        }
+    }
+
     public void FindPath(bool astar)
     {
         DebugDrawer.Clear();

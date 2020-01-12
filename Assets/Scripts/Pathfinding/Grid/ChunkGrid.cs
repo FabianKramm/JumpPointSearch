@@ -23,7 +23,7 @@ namespace Pathfinding
         private long chunkMagnitude;
         private Chunk[] chunks;
 
-        public ChunkGrid(int sizeX, int sizeY, int chunkSize)
+        public ChunkGrid(int sizeX, int sizeY, int chunkSize = 64)
         {
             SizeX = sizeX;
             SizeY = sizeY;
@@ -40,9 +40,11 @@ namespace Pathfinding
             this.chunks = new Chunk[(SizeX / chunkSize) * (SizeY / chunkSize)];
         }
 
-        public void AddChunk(int chunkX, int chunkY, Chunk chunk)
+        public void AddChunk(int x, int y, Chunk chunk)
         {
-            chunks[chunkX * chunkRows + chunkY] = chunk;
+            long arrayPos = x * SizeY + y;
+            long chunkPos = arrayPos / chunkMagnitude;
+            chunks[chunkPos] = chunk;
         }
         
         public bool IsWalkable(int x, int y)

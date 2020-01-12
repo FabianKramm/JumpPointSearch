@@ -21,7 +21,7 @@ namespace Pathfinding
         protected MinHeap<Node, int> heap;
         protected Dictionary<long, Node> nodes;
 
-        public List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target)
+        public virtual List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target)
         {
             this.grid = grid;
             sizeY = grid.GetSize().y;
@@ -29,7 +29,6 @@ namespace Pathfinding
             nodes = new Dictionary<long, Node>();
             startNode = GetNodeFromIndexUnchecked(start.x, start.y);
             targetNode = GetNodeFromIndexUnchecked(target.x, target.y);
-
             if (CalculateShortestPath())
             {
                 return RetracePath();
@@ -51,7 +50,7 @@ namespace Pathfinding
                     return true;
 
                 currentNode.setClosed();
-                var count = GetNeighbors(currentNode, neighbors);
+                var count = GetNeighbors(currentNode, ref neighbors);
                 for (var i = 0; i < count; i++)
                 {
                     var neighbor = neighbors[i];
@@ -59,7 +58,7 @@ namespace Pathfinding
                     if (neighborNode == null || neighborNode.isClosed())
                         continue;
 
-                    int newGCost = (int)(currentNode.gCost + Diagonal(currentNode, neighborNode));
+                    int newGCost = NewGCost(currentNode, neighborNode);
                     if (newGCost < neighborNode.gCost || !neighborNode.isOpen())
                     {
 #if DEBUG_PATHFINDING
@@ -71,7 +70,7 @@ namespace Pathfinding
 #endif
 
                         neighborNode.gCost = newGCost;
-                        neighborNode.hCost = Diagonal(neighborNode, targetNode);
+                        neighborNode.hCost = Heuristic(neighborNode, targetNode);
                         neighborNode.parent = currentNode;
 
                         if (!neighborNode.isOpen())
@@ -94,7 +93,7 @@ namespace Pathfinding
             return GetNodeFromIndexUnchecked(neighbor.x, neighbor.y);
         }
 
-        protected virtual int GetNeighbors(Node currentNode, Position[] neighbors)
+        protected virtual int GetNeighbors(Node currentNode, ref Position[] neighbors)
         {
             int count = 0;
             for (int x = -1; x <= 1; x++)
@@ -156,7 +155,12 @@ namespace Pathfinding
             return GetNodeFromIndexUnchecked(x, y);
         }
 
-        private int Diagonal(Node a, Node b)
+        protected virtual int NewGCost(Node currentNode, Node neighborNode)
+        {
+            return currentNode.gCost + Heuristic(currentNode, neighborNode);
+        }
+
+        protected int Diagonal(Node a, Node b)
         {
             var dx = Math.Abs(a.x - b.x);
             var dy = Math.Abs(a.y - b.y);
@@ -164,12 +168,20 @@ namespace Pathfinding
             return (int)(LateralCost * (dx + dy) + (DiagonalCost - 2 * LateralCost) * Math.Min(dx, dy));
         }
 
-        private int Manhattan(Node a, Node b)
+        protected int Manhattan(Node a, Node b)
         {
             var dx = Math.Abs(a.x - b.x);
             var dy = Math.Abs(a.y - b.y);
 
             return dx + dy;
+        }
+
+        protected virtual int Heuristic(Node a, Node b)
+        {
+            var dx = Math.Abs(a.x - b.x);
+            var dy = Math.Abs(a.y - b.y);
+
+            return (int)(LateralCost * (dx + dy) + (DiagonalCost - 2 * LateralCost) * Math.Min(dx, dy));
         }
     }
 }
