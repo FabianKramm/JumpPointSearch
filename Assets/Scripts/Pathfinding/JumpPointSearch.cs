@@ -4,7 +4,7 @@ namespace Pathfinding
 {
     public class JumpPointSearch : AStarSearch
     {
-        private static readonly int MaxJumpPointDistance = 256;
+        private static readonly int MaxJumpPointDistance = 128;
 
         protected override int GetNeighbors(Node currentNode, Position[] neighbors)
         {

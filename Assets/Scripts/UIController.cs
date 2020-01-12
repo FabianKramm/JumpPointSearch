@@ -6,8 +6,8 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
-    public float walkableWeight = 1;
-    public float roadWeight = 0.25f;
+    public int walkableWeight = 2;
+    public int roadWeight = 1;
 
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
@@ -173,7 +173,7 @@ public class UIController : MonoBehaviour
 
     internal class BenchmarkParameter
     {
-        public ArrayGrid grid;
+        public IGrid grid;
         public int iterations;
     }
 
@@ -189,7 +189,7 @@ public class UIController : MonoBehaviour
         });
     }
 
-    private ArrayGrid createGraph()
+    private IGrid createGraph()
     {
         // Convert visible grid to memory grid
         var grid = GridController.Ground;
@@ -202,19 +202,18 @@ public class UIController : MonoBehaviour
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
-                var index = memoryGrid.GridToArrayPos(x, y);
                 var tile = grid.GetTile(new Vector3Int(x, y, 0));
                 if (tile == GridController.active.blocked)
                 {
-                    memoryGrid.Weights[index] = 0;
+                    memoryGrid.SetWeight(x, y, 0);
                 }
                 else if (tile == GridController.active.road)
                 {
-                    memoryGrid.Weights[index] = roadWeight;
+                    memoryGrid.SetWeight(x, y, roadWeight);
                 }
                 else if (tile == GridController.active.walkable)
                 {
-                    memoryGrid.Weights[index] = walkableWeight;
+                    memoryGrid.SetWeight(x, y, walkableWeight);
                 }
             }
 
@@ -234,7 +233,8 @@ public class UIController : MonoBehaviour
         astar.showDebug = false;
         var jps = new JumpPointSearch();
         jps.showDebug = false;
-        var r = new System.Random();
+        var r = new System.Random(100);
+        var size = benchmarkParameter.grid.GetSize();
 
         for (var i = 0; i < benchmarkParameter.iterations; i++)
         {
@@ -242,18 +242,20 @@ public class UIController : MonoBehaviour
             Vector3Int end;
             do
             {
-                start = new Vector3Int(r.Next(0, benchmarkParameter.grid.SizeX), r.Next(0, benchmarkParameter.grid.SizeY), 0);
-                end = new Vector3Int(r.Next(0, benchmarkParameter.grid.SizeX), r.Next(0, benchmarkParameter.grid.SizeY), 0);
+                start = new Vector3Int(r.Next(0, size.x), r.Next(0, size.y), 0);
+                end = new Vector3Int(r.Next(0, size.x), r.Next(0, size.y), 0);
             } while (!grid.IsWalkable(start.x, start.y) || !grid.IsWalkable(end.x, end.y));
 
             // Run A* Search
             stopwatch.Restart();
-            astar.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
+            if (astar.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y)) == null)
+                Debug.Log("Astar didn't find path");
             astarTime += stopwatch.ElapsedMilliseconds;
 
             // Run Jump Point Search
             stopwatch.Restart();
-            jps.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
+            if (jps.GetPath(grid, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y)) == null)
+                Debug.Log("JPS didn't find path");
             jpsTime += stopwatch.ElapsedMilliseconds;
 
             if (i % 100 == 0)

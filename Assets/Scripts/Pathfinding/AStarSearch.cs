@@ -16,6 +16,7 @@ namespace Pathfinding
         protected Node startNode;
         protected Node targetNode;
         protected IGrid grid;
+        protected long sizeY;
 
         protected MinHeap<Node, int> heap;
         protected Dictionary<long, Node> nodes;
@@ -23,6 +24,7 @@ namespace Pathfinding
         public List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target)
         {
             this.grid = grid;
+            sizeY = grid.GetSize().y;
             heap = new MinHeap<Node, int>();
             nodes = new Dictionary<long, Node>();
             startNode = GetNodeFromIndexUnchecked(start.x, start.y);
@@ -137,7 +139,7 @@ namespace Pathfinding
 
         protected Node GetNodeFromIndexUnchecked(int x, int y)
         {
-            var arrayPos = grid.GridToArrayPos(x, y);
+            var arrayPos = x * sizeY + y;
             if (nodes.TryGetValue(arrayPos, out Node node))
                 return node;
 

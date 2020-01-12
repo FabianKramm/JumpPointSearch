@@ -67,6 +67,7 @@
     <Compile Include="Assets\Scripts\GridController.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\AStarSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\ArrayGrid.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\ChunkGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\IGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\JumpPointSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\MinHeap.cs" />

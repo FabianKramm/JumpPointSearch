@@ -6,20 +6,23 @@ namespace Pathfinding
     {
         public int SizeX;
         public int SizeY;
-        public float[] Weights;
+        public int[] Weights;
 
         public ArrayGrid(int sizeX, int sizeY)
         {
             SizeX = sizeX;
             SizeY = sizeY;
-
-            Weights = new float[SizeX * SizeY];
+            Weights = new int[SizeX * SizeY];
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long GridToArrayPos(int x, int y)
+        public Position GetSize()
         {
-            return x * SizeY + y;
+            return new Position(SizeX, SizeY);
+        }
+
+        public void SetWeight(int x, int y, int weight)
+        {
+            Weights[x * SizeY + y] = weight;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
