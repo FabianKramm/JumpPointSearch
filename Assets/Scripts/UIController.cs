@@ -6,9 +6,8 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
-    public int walkableWeight = 2;
-    public int roadWeight = 1;
-    
+    private static int ChunkSize = 128;
+
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
         return Mathf.PerlinNoise((x + offset) * scale, (y + offset) * scale);
@@ -100,6 +99,19 @@ public class UIController : MonoBehaviour
     public void Clear()
     {
         DebugDrawer.Clear();
+    }
+
+    public void BuildNav()
+    {
+        DebugDrawer.Clear();
+        var memoryGrid = createGraph();
+
+        var sizeX = GridController.active.size.x;
+        var sizeY = GridController.active.size.y;
+        var navChunkGrid = new NavChunkGrid(memoryGrid, sizeX, sizeY, ChunkSize);
+
+        navChunkGrid.BuildNavPoints();
+        navChunkGrid.ShowDebug();
     }
 
     public void FindSubGoalPath()
@@ -280,22 +292,22 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
-        var memoryGrid = new ChunkGrid(sizeX, sizeY, 128);
+        var memoryGrid = new ChunkGrid(sizeX, sizeY, ChunkSize);
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
                 var tile = grid.GetTile(new Vector3Int(x, y, 0));
                 if (tile == GridController.active.blocked)
                 {
-                    memoryGrid.SetWeight(x, y, 0);
+                    memoryGrid.SetWeight(x, y, (int)CellType.Blocked);
                 }
                 else if (tile == GridController.active.road)
                 {
-                    memoryGrid.SetWeight(x, y, roadWeight);
+                    memoryGrid.SetWeight(x, y, (int)CellType.Road);
                 }
                 else if (tile == GridController.active.walkable)
                 {
-                    memoryGrid.SetWeight(x, y, walkableWeight);
+                    memoryGrid.SetWeight(x, y, (int)CellType.Walkable);
                 }
             }
 

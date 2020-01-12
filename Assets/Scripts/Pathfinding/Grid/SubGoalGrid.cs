@@ -6,7 +6,7 @@ namespace Pathfinding
 {
     public class SubGoalGrid : IGrid
     {
-        private static int[][] directions = new int[][]
+        public static int[][] directions = new int[][]
         {
             // Cardinal Directions
             new int[]
@@ -110,7 +110,7 @@ namespace Pathfinding
             }
         }
 
-        public int ClearanceWithSubgoal(int x, int y, int dx, int dy, SubGoal subGoal)
+        public static int ClearanceWithSubgoal(IGrid grid, int x, int y, int dx, int dy, int subGoalX, int subGoalY)
         {
             int i = 0;
             while (true)
@@ -119,7 +119,7 @@ namespace Pathfinding
                     return i;
 
                 i = i + 1;
-                if (subGoals.TryGetValue((x + i * dx) * sizeY + (y + i * dy), out SubGoal value) && value == subGoal)
+                if(subGoalX == (x + i * dx) && subGoalY == (y + i * dy))
                     return i;
             }
         }
@@ -259,7 +259,7 @@ namespace Pathfinding
             // Get cardinal reachable
             for (int i = 0; i < 8; i++)
             {
-                var clearance = ClearanceWithSubgoal(x, y, directions[i][0], directions[i][1], subGoal);
+                var clearance = ClearanceWithSubgoal(grid, x, y, directions[i][0], directions[i][1], subGoal.x, subGoal.y);
                 var subgoal = new Position(x + clearance * directions[i][0], y + clearance * directions[i][1]);
                 if (subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out SubGoal subGoalRef) && subGoalRef == subGoal)
                     return true;
@@ -386,7 +386,7 @@ namespace Pathfinding
             return 0;
         }
 
-        public int GetWeight(int x, int y)
+        public CellType GetWeight(int x, int y)
         {
             throw new NotImplementedException();
         }

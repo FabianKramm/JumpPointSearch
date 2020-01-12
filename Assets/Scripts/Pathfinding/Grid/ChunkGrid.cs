@@ -78,10 +78,10 @@ namespace Pathfinding
             chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)] = weight;
         }
 
-        public int GetWeight(int x, int y)
+        public CellType GetWeight(int x, int y)
         {
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
-                return -1;
+                return CellType.None;
 
             int chunkX = (x / chunkSize);
             int chunkY = (y / chunkSize);
@@ -95,7 +95,7 @@ namespace Pathfinding
                 }
             }
 
-            return chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)];
+            return (CellType)chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)];
         }
 
         public Position GetSize()

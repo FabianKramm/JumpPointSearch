@@ -25,11 +25,11 @@ namespace Pathfinding
             Weights[x * SizeY + y] = weight;
         }
 
-        public int GetWeight(int x, int y)
+        public CellType GetWeight(int x, int y)
         {
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
-                return -1;
-            return Weights[x * SizeY + y];
+                return CellType.None;
+            return (CellType)Weights[x * SizeY + y];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

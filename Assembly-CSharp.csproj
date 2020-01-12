@@ -69,9 +69,13 @@
     <Compile Include="Assets\Scripts\Pathfinding\Algorithms\JumpPointSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Algorithms\SubGoalSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\ArrayGrid.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\CellType.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\ChunkGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\IGrid.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\NavChunk.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\NavChunkGrid.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\NavPoint.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\NavPointEdge.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoal.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoalEdge.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoalGrid.cs" />
