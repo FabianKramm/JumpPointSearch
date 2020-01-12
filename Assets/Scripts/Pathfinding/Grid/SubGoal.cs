@@ -1,4 +1,6 @@
-﻿namespace Pathfinding
+﻿using System;
+
+namespace Pathfinding
 {
     public class SubGoal
     {
@@ -11,6 +13,24 @@
             this.x = x;
             this.y = y;
             this.edges = new SubGoalEdge[0];
+        }
+
+        public void AddEdge(int x, int y, float cost)
+        {
+
+        }
+
+        public void RemoveEdge(int x, int y)
+        {
+
+        }
+
+        public SubGoal Clone()
+        {
+            var cloned = new SubGoal(x, y);
+            cloned.edges = new SubGoalEdge[edges.Length];
+            Array.Copy(edges, cloned.edges, edges.Length);
+            return cloned;
         }
     }
 }

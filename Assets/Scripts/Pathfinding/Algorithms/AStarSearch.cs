@@ -10,7 +10,7 @@ namespace Pathfinding
     {
         public static readonly float DiagonalCost = 1.4142135623730950488016887242097f; // sqrt(2)
         public static readonly float LateralCost = 1.0f;
-
+        
         public bool showDebug = true;
 
         protected Node startNode;
@@ -21,7 +21,7 @@ namespace Pathfinding
         protected MinHeap<Node, int> heap;
         protected Dictionary<long, Node> nodes;
 
-        public virtual List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target)
+        public virtual List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target, bool greedy = true)
         {
             this.grid = grid;
             sizeY = grid.GetSize().y;
@@ -29,12 +29,87 @@ namespace Pathfinding
             nodes = new Dictionary<long, Node>();
             startNode = GetNodeFromIndexUnchecked(start.x, start.y);
             targetNode = GetNodeFromIndexUnchecked(target.x, target.y);
+
+            if (greedy && findPathGreedy())
+            {
+                return RetracePath();
+            }
+
             if (CalculateShortestPath())
             {
                 return RetracePath();
             }
 
             return null;
+        }
+
+        private bool findPathGreedy()
+        {
+            var x = startNode.x;
+            var y = startNode.y;
+
+            var dx = targetNode.x - startNode.x;
+            var dy = targetNode.y - startNode.y;
+
+            int adx = Math.Abs(dx);
+            int ady = Math.Abs(dy);
+
+            Position midPos = Position.invalid;
+
+            dx = (dx > 0 ? 1 : 0) - (dx < 0 ? 1 : 0);
+            dy = (dy > 0 ? 1 : 0) - (dy < 0 ? 1 : 0);
+
+            // go diagonally first
+            if (x != targetNode.x && y != targetNode.y)
+            {
+                int minlen = Math.Min(adx, ady);
+                int tx = x + dx * minlen;
+                while (x != tx)
+                {
+                    if (grid.IsWalkable(x, y) && (grid.IsWalkable(x + dx, y) || grid.IsWalkable(x, y + dy))) // prevent tunneling as well
+                    {
+                        x += dx;
+                        y += dy;
+                    }
+                    else
+                        return false;
+                }
+
+                if (!grid.IsWalkable(x, y))
+                    return false;
+
+                midPos = new Position(x, y);
+            }
+
+            if (!(x == targetNode.x && y == targetNode.y))
+            {
+                while (x != targetNode.x)
+                    if (!grid.IsWalkable(x += dx, y))
+                        return false;
+
+                while (y != targetNode.y)
+                    if (!grid.IsWalkable(x, y += dy))
+                        return false;
+            }
+
+            if (midPos != Position.invalid)
+            {
+                var midNode = GetNodeFromIndexUnchecked(midPos.x, midPos.y);
+                if (midNode == null)
+                    return false;
+
+                midNode.parent = startNode;
+                if (midNode != targetNode)
+                {
+                    targetNode.parent = midNode;
+                }
+            }
+            else
+            {
+                targetNode.parent = startNode;
+            }
+            
+            return true;
         }
 
         private bool CalculateShortestPath()
@@ -125,13 +200,14 @@ namespace Pathfinding
         private List<Node> RetracePath()
         {
             List<Node> path = new List<Node>();
-            Node currentNode = targetNode;
 
+            Node currentNode = targetNode;
             while (currentNode != startNode)
             {
                 path.Add(currentNode);
                 currentNode = currentNode.parent;
             }
+
             path.Reverse();
             return path;
         }
@@ -176,7 +252,7 @@ namespace Pathfinding
             return dx + dy;
         }
 
-        protected virtual int Heuristic(Node a, Node b)
+        public virtual int Heuristic(Node a, Node b)
         {
             var dx = Math.Abs(a.x - b.x);
             var dy = Math.Abs(a.y - b.y);

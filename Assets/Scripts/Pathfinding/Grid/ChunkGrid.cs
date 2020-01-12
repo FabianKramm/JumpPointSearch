@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using UnityEngine;
 
 namespace Pathfinding
@@ -14,13 +16,14 @@ namespace Pathfinding
             }
         }
 
-        public long SizeX;
-        public long SizeY;
+        private object s_sync = new object();
 
-        private long chunkCols;
-        private long chunkRows;
-        private long chunkSize;
-        private long chunkMagnitude;
+        public int SizeX;
+        public int SizeY;
+
+        private int chunkCols;
+        private int chunkRows;
+        private int chunkSize;
         private Chunk[] chunks;
 
         public ChunkGrid(int sizeX, int sizeY, int chunkSize = 64)
@@ -34,37 +37,45 @@ namespace Pathfinding
             }
 
             this.chunkSize = chunkSize;
-            this.chunkMagnitude = chunkSize * chunkSize;
             this.chunkCols = SizeX / chunkSize;
             this.chunkRows = SizeY / chunkSize;
             this.chunks = new Chunk[(SizeX / chunkSize) * (SizeY / chunkSize)];
         }
 
-        public void AddChunk(int x, int y, Chunk chunk)
+        private Chunk LoadChunk(int chunkX, int chunkY)
         {
-            long arrayPos = x * SizeY + y;
-            long chunkPos = arrayPos / chunkMagnitude;
-            chunks[chunkPos] = chunk;
+            throw new NotImplementedException();
         }
-        
+
         public bool IsWalkable(int x, int y)
         {
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
                 return false;
 
-            long arrayPos = x * SizeY + y;
-            long chunkPos = arrayPos / chunkMagnitude;
-            return chunks[chunkPos].Weights[arrayPos - chunkPos * chunkMagnitude] != 0;
+            int chunkX = (x / chunkSize);
+            int chunkY = (y / chunkSize);
+            int chunkPos = chunkX * chunkRows + chunkY;
+            if (chunks[chunkPos] == null)
+            {
+                lock (s_sync)
+                {
+                    if (chunks[chunkPos] == null)
+                        chunks[chunkPos] = LoadChunk(chunkX, chunkY);
+                }
+            }
+
+            return chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)] != 0;
         }
 
         public void SetWeight(int x, int y, int weight)
         {
-            long arrayPos = x * SizeY + y;
-            long chunkPos = arrayPos / chunkMagnitude;
+            int chunkX = (x / chunkSize);
+            int chunkY = (y / chunkSize);
+            int chunkPos = chunkX * chunkRows + chunkY;
             if (chunks[chunkPos] == null)
                 chunks[chunkPos] = new Chunk((int)chunkSize);
 
-            chunks[chunkPos].Weights[arrayPos - chunkPos * chunkMagnitude] = weight;
+            chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)] = weight;
         }
 
         public int GetWeight(int x, int y)
@@ -72,9 +83,19 @@ namespace Pathfinding
             if (x < 0 || x >= SizeX || y < 0 || y >= SizeY)
                 return -1;
 
-            long arrayPos = x * SizeY + y;
-            long chunkPos = arrayPos / chunkMagnitude;
-            return chunks[chunkPos].Weights[arrayPos - chunkPos * chunkMagnitude];
+            int chunkX = (x / chunkSize);
+            int chunkY = (y / chunkSize);
+            int chunkPos = chunkX * chunkRows + chunkY;
+            if (chunks[chunkPos] == null)
+            {
+                lock (s_sync)
+                {
+                    if (chunks[chunkPos] == null)
+                        chunks[chunkPos] = LoadChunk(chunkX, chunkY);
+                }
+            }
+
+            return chunks[chunkPos].Weights[(x - chunkX * chunkSize) * chunkSize + (y - chunkY * chunkSize)];
         }
 
         public Position GetSize()

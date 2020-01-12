@@ -4,9 +4,9 @@
     {
         public int toX;
         public int toY;
-        public int cost;
+        public float cost;
 
-        public SubGoalEdge(int x, int y, int cost)
+        public SubGoalEdge(int x, int y, float cost)
         {
             this.toX = x;
             this.toY = y;

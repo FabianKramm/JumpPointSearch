@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Pathfinding\Grid\ArrayGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\ChunkGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\IGrid.cs" />
+    <Compile Include="Assets\Scripts\Pathfinding\Grid\NavChunkGrid.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoal.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoalEdge.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Grid\SubGoalGrid.cs" />

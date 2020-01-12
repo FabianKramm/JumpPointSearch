@@ -8,7 +8,7 @@ public class UIController : MonoBehaviour
 {
     public int walkableWeight = 2;
     public int roadWeight = 1;
-
+    
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
         return Mathf.PerlinNoise((x + offset) * scale, (y + offset) * scale);
@@ -149,12 +149,14 @@ public class UIController : MonoBehaviour
         sgg.ConstructSubgoals(0, 0, sizeX, sizeY);
         sgg.ConstructEdges(0, 0, sizeX, sizeY);
 
+        Debug.Log(sgg.subGoals.Count);
+
         sw.Stop();
         Debug.Log("Preprocessing took " + sw.ElapsedMilliseconds + "ms");
         // sgg.DrawSubGoals();
 
         List<Node> path;
-        var subGoalSearch = new SubGoalSearch();
+        var subGoalSearch = new SubGoalSearch(sgg);
         sw.Restart();
         path = subGoalSearch.GetPath(sgg, start, end);
         UnityEngine.Debug.Log("SubGoalSearch Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");

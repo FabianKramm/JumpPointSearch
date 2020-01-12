@@ -95,7 +95,7 @@ namespace Pathfinding
                 }
             }
         }
-
+        
         public int Clearance(int x, int y, int dx, int dy)
         {
             int i = 0;
@@ -110,6 +110,196 @@ namespace Pathfinding
             }
         }
 
+        public int ClearanceWithSubgoal(int x, int y, int dx, int dy, SubGoal subGoal)
+        {
+            int i = 0;
+            while (true)
+            {
+                if (!grid.IsWalkable(x + i * dx, y + i * dy))
+                    return i;
+
+                i = i + 1;
+                if (subGoals.TryGetValue((x + i * dx) * sizeY + (y + i * dy), out SubGoal value) && value == subGoal)
+                    return i;
+            }
+        }
+
+        /*
+         * TODO: FINISH TWO LEVEL SUB GOAL GRIDS
+        public float CostOtherPath(SubGoal from, SubGoal to, SubGoal without)
+        {
+            SubGoalSearch subGoalSearch = new SubGoalSearch(this);
+
+            subGoalSearch.FakeRemoveSubGoal(without);
+            var path = subGoalSearch.GetPath(this, new Vector2Int(from.x, from.y), new Vector2Int(to.x, to.y));
+            if (path == null)
+            {
+                return -1;
+            }
+
+            float cost = 0;
+            for (var i = 1; i < path.Count; i++)
+            {
+                cost += Diagonal(path[i], path[i - 1]);
+            }
+
+            return cost;
+        }
+
+        public bool IsNecessaryToConnect(SubGoal from, SubGoal to, SubGoal without)
+        {
+            if (IsDirectHReachable(from.x, from.y, to))
+                return false;
+
+            var costOtherPath = CostOtherPath(from, to, without);
+            if (costOtherPath == -1)
+            {
+                return true;
+            }
+            if (costOtherPath <= Diagonal(without, from) + Diagonal(without, to))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public SubGoal GetSubGoal(int x, int y)
+        {
+            return subGoals[x * sizeY + y];
+        }
+
+        public void PruneSubGoal(SubGoal subGoal)
+        {
+            for (var i = 0; i < subGoal.edges.Length; i++)
+            {
+                for (var j = 0; j < subGoal.edges.Length; j++)
+                {
+                    if (i == j)
+                        continue;
+
+                    var subGoal1 = GetSubGoal(subGoal.edges[i].toX, subGoal.edges[i].toY);
+                    var subGoal2 = GetSubGoal(subGoal.edges[j].toX, subGoal.edges[j].toY);
+                    var subGoalCostWith = Diagonal(subGoal, subGoal1) + Diagonal(subGoal, subGoal2);
+                    if (Diagonal(subGoal1, subGoal2) == subGoalCostWith)
+                    {
+                        if (CostOtherPath(subGoal1, subGoal2, subGoal) > subGoalCostWith)
+                        {
+                            
+                        }
+                    }
+                }
+            }
+        }
+
+        public SubGoalGrid PruneSubGoals()
+        {
+            var prunedGrid = new SubGoalGrid(grid);
+
+            // Copy graph
+            foreach(var subGoalKV in subGoals)
+            {
+                prunedGrid.subGoals[subGoalKV.Key] = subGoalKV.Value.Clone();
+            }
+
+            // Prune Graph
+            List<SubGoal> prunedSubGoals = new List<SubGoal>();
+            foreach(var subGoal in prunedGrid.subGoals.Values)
+            {
+                var necessary = false;
+                for (var i = 0; i < subGoal.edges.Length && necessary == false; i++)
+                {
+                    for (var j = 0; j < subGoal.edges.Length && necessary == false; j++)
+                    {
+                        if (i == j)
+                            continue;
+
+                        if (prunedGrid.IsNecessaryToConnect(prunedGrid.GetSubGoal(subGoal.edges[i].toX, subGoal.edges[i].toY), prunedGrid.GetSubGoal(subGoal.edges[j].toX, subGoal.edges[j].toY), subGoal))
+                        {
+                            necessary = true;
+                            continue;
+                        }
+                    }
+                }
+
+                if (necessary == false)
+                {
+                    prunedGrid.PruneSubGoal(subGoal);
+                    prunedSubGoals.Add(subGoal);
+                }
+            }
+
+            // Delete SubGoals from dictionary
+            foreach(var subGoal in prunedSubGoals)
+            {
+                prunedGrid.subGoals.Remove(subGoal.x * sizeY + subGoal.y);
+            }
+
+            return prunedGrid;
+        }*/
+
+        public virtual float Diagonal(SubGoal a, SubGoal b)
+        {
+            var dx = Math.Abs(a.x - b.x);
+            var dy = Math.Abs(a.y - b.y);
+
+            return AStarSearch.LateralCost * (float)(dx + dy) + (AStarSearch.DiagonalCost - 2f * AStarSearch.LateralCost) * (float)Math.Min(dx, dy);
+        }
+
+        public virtual float Diagonal(Node a, Node b)
+        {
+            var dx = Math.Abs(a.x - b.x);
+            var dy = Math.Abs(a.y - b.y);
+
+            return AStarSearch.LateralCost * (float)(dx + dy) + (AStarSearch.DiagonalCost - 2f * AStarSearch.LateralCost) * (float)Math.Min(dx, dy);
+        }
+
+        public bool IsDirectHReachable(int x, int y, SubGoal subGoal)
+        {
+            // Get cardinal reachable
+            for (int i = 0; i < 8; i++)
+            {
+                var clearance = ClearanceWithSubgoal(x, y, directions[i][0], directions[i][1], subGoal);
+                var subgoal = new Position(x + clearance * directions[i][0], y + clearance * directions[i][1]);
+                if (subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out SubGoal subGoalRef) && subGoalRef == subGoal)
+                    return true;
+            }
+
+            // Get diagonal reachable
+            for (int d = 4; d < 8; d++)
+            {
+                for (int c = 0; c <= 1; c++)
+                {
+                    var cx = c == 0 ? directions[d][0] : 0;
+                    var cy = c == 0 ? 0 : directions[d][1];
+
+                    var max = Clearance(x, y, cx, cy);
+                    var diag = Clearance(x, y, directions[d][0], directions[d][1]);
+                    if (IsSubGoal(x + max * cx, y + max * cy))
+                        max--;
+                    if (IsSubGoal(x + diag * directions[d][0], y + diag * directions[d][1]))
+                        diag--;
+
+                    for (int i = 1; i < diag; i++)
+                    {
+                        var newPosX = x + i * directions[d][0];
+                        var newPosY = y + i * directions[d][1];
+                        var j = Clearance(newPosX, newPosY, cx, cy);
+                        if (j <= max && subGoals.TryGetValue((newPosX + j * cx) * sizeY + (newPosY + j * cy), out SubGoal subGoalRef) && subGoalRef == subGoal)
+                        {
+                            return true;
+                        }
+                        if (j < max)
+                        {
+                            max = j;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+        
         public List<SubGoal> GetDirectHReachable(int x, int y)
         {
             var reachable = new List<SubGoal>();
@@ -164,13 +354,7 @@ namespace Pathfinding
             return subGoals.ContainsKey(x * sizeY + y);
         }
 
-        private int Diagonal(SubGoal a, SubGoal b)
-        {
-            var dx = Math.Abs(a.x - b.x);
-            var dy = Math.Abs(a.y - b.y);
 
-            return (int)(AStarSearch.LateralCost * (dx + dy) + (AStarSearch.DiagonalCost - 2 * AStarSearch.LateralCost) * Math.Min(dx, dy));
-        }
 
         public void DrawSubGoals()
         {
@@ -196,7 +380,7 @@ namespace Pathfinding
             for (var i = 0; i < edges.edges.Length; i++)
             {
                 if (edges.edges[i].toX == neighbor.x && edges.edges[i].toY == neighbor.y)
-                    return edges.edges[i].cost;
+                    return (int)edges.edges[i].cost;
             }
 
             return 0;
