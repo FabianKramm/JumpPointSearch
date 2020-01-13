@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Pathfinding
 {
-    public class SubGoalSearch : AStarSearch
+    public class SubGoalBiDirectionalDijkstraSearch : BiDirectionalDijkstraSearch
     {
         private SubGoalGrid subGoalGrid;
         private Dictionary<long, Position[]> fakeEdges;
         public HashSet<long> removedNodes;
 
-        public SubGoalSearch(IGrid grid)
+        public SubGoalBiDirectionalDijkstraSearch(SubGoalGrid grid) : base(grid)
         {
             fakeEdges = new Dictionary<long, Position[]>();
             removedNodes = new HashSet<long>();
-            subGoalGrid = (SubGoalGrid)grid;
+            subGoalGrid = grid;
             sizeY = grid.GetSize().y;
         }
 
@@ -39,14 +42,6 @@ namespace Pathfinding
             }
         }
 
-        protected override Node GetNeighborNode(Node currentNode, Position neighbor)
-        {
-            if (removedNodes.Count > 0 && removedNodes.Contains(neighbor.x * sizeY + neighbor.y))
-                return null;
-
-            return base.GetNeighborNode(currentNode, neighbor);
-        }
-
         public void FakeRemoveSubGoal(SubGoal subGoal)
         {
             removedNodes.Add(subGoal.x * sizeY + subGoal.y);
@@ -64,41 +59,49 @@ namespace Pathfinding
             return neighbors;
         }
 
-        public override List<Node> GetPath(IGrid grid, Vector2Int start, Vector2Int target, bool greedy = true)
+        public override List<Node> GetPath(Vector2Int start, Vector2Int target)
         {
             fakeEdges = new Dictionary<long, Position[]>();
-            // removedNodes = new HashSet<long>();
-            subGoalGrid = (SubGoalGrid)grid;
-            sizeY = grid.GetSize().y;
+            return base.GetPath(start, target);
+        }
 
-            // Insert target -> end into graph
-            if (subGoalGrid.subGoals.ContainsKey(target.x * sizeY + target.y) == false)
+        public override Node GetStartNode(Vector2Int start)
+        {
+            // Insert start into graph
+            if (subGoalGrid.subGoals.ContainsKey(start.x * sizeY + start.y) == false)
             {
-                var targetReachable = subGoalGrid.GetDirectHReachable(target.x, target.y);
+                var reachable = subGoalGrid.GetDirectHReachable(start.x, start.y);
+                if (reachable.Count == 0)
+                    return null;
+                foreach (var t in reachable)
+                {
+                    AddFakeEdge(new Position(t.x, t.y), new Position[] { new Position(start.x, start.y) });
+                    AddFakeEdge(new Position(start.x, start.y), new Position[] { new Position(t.x, t.y) });
+                }
+            }
+
+            return new Node(start.x, start.y);
+        }
+
+        public override Node GetEndNode(Vector2Int end)
+        {
+            // Insert target -> end into graph
+            if (subGoalGrid.subGoals.ContainsKey(end.x * sizeY + end.y) == false)
+            {
+                var targetReachable = subGoalGrid.GetDirectHReachable(end.x, end.y);
                 if (targetReachable.Count == 0)
                     return null;
                 foreach (var t in targetReachable)
                 {
-                    AddFakeEdge(new Position(t.x, t.y), new Position[] { new Position(target.x, target.y) });
+                    AddFakeEdge(new Position(t.x, t.y), new Position[] { new Position(end.x, end.y) });
+                    AddFakeEdge(new Position(end.x, end.y), new Position[] { new Position(t.x, t.y) });
                 }
             }
 
-            // Insert start into graph
-            if (subGoalGrid.subGoals.ContainsKey(start.x * sizeY + start.y) == false)
-            {
-                AddFakeEdge(new Position(start.x, start.y), GetReachable(start.x, start.y));
-            }
-
-            return base.GetPath(grid, start, target, false);
+            return new Node(end.x, end.y);
         }
 
-        protected override int NewGCost(Node currentNode, Node neighborNode)
-        {
-            // TODO: For teleporters this will change
-            return currentNode.gCost + Heuristic(currentNode, neighborNode);
-        }
-
-        protected override int GetNeighbors(Node currentNode, ref Position[] neighbors)
+        protected override int GetNeighbors(Node currentNode, ref Neighbor[] neighbors)
         {
             var index = currentNode.x * sizeY + currentNode.y;
             var count = 0;
@@ -111,21 +114,32 @@ namespace Pathfinding
             if (subGoalGrid.subGoals.TryGetValue(index, out subGoal))
                 count += subGoal.edges.Length;
 
-            neighbors = new Position[count];
+            neighbors = new Neighbor[count];
             if (subGoal != null)
             {
                 for (var i = 0; i < subGoal.edges.Length; i++)
                 {
-                    neighbors[i] = new Position(subGoal.edges[i].toX, subGoal.edges[i].toY);
+                    neighbors[i] = new Neighbor()
+                    {
+                        node = GetNodeAt(subGoal.edges[i].toX, subGoal.edges[i].toY),
+                        cost = subGoal.edges[i].cost
+                    };
                 }
             }
 
             if (fakeEdge != null)
             {
                 var offset = subGoal != null ? subGoal.edges.Length : 0;
-                Array.Copy(fakeEdge, 0, neighbors, offset, fakeEdge.Length);
+                for (var i = 0; i < fakeEdge.Length; i++)
+                {
+                    neighbors[i + offset] = new Neighbor()
+                    {
+                        node = GetNodeAt(fakeEdge[i].x, fakeEdge[i].y),
+                        cost = 1
+                    };
+                }
             }
-            
+
             return neighbors.Length;
         }
     }

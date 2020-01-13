@@ -374,7 +374,7 @@ namespace Pathfinding
             return grid.GetSize();
         }
 
-        public int GetWeight(Node current, Node neighbor)
+        public float GetWeight(Node current, Node neighbor)
         {
             var edges = subGoals[current.x * sizeY + current.y];
             for (var i = 0; i < edges.edges.Length; i++)

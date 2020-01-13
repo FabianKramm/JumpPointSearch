@@ -101,18 +101,142 @@ public class UIController : MonoBehaviour
         DebugDrawer.Clear();
     }
 
-    public void BuildNav()
+    public void FindBiDirectionalDijkstraPath()
     {
         DebugDrawer.Clear();
+        var pathGrid = GridController.Path;
         var memoryGrid = createGraph();
 
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
-        var navChunkGrid = new NavChunkGrid(memoryGrid, sizeX, sizeY, ChunkSize);
+        // Set grid weights
+        var start = new Vector2Int(-1, -1);
+        var end = new Vector2Int(-1, -1);
 
-        navChunkGrid.BuildNavPoints();
-        navChunkGrid.ShowDebug();
+        for (var x = 0; x < sizeX; x++)
+            for (var y = 0; y < sizeY; y++)
+            {
+                var pathTile = pathGrid.GetTile(new Vector3Int(x, y, 0));
+                if (pathTile != null)
+                {
+                    if (pathTile == GridController.active.start)
+                    {
+                        start = new Vector2Int(x, y);
+                    }
+                    else if (pathTile == GridController.active.end)
+                    {
+                        end = new Vector2Int(x, y);
+                    }
+                }
+            }
+
+        if (start.x == -1 || end.x == -1)
+        {
+            Debug.Log("Couldn't find any start or end position");
+            return;
+        }
+
+        // List<Node> path;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+
+        List<BiDirectionalDijkstraSearch.Node> path;
+        var biDirectionalDijkstra = new BiDirectionalDijkstraSearch(memoryGrid);
+        path = biDirectionalDijkstra.GetPath(start, end);
+        UnityEngine.Debug.Log("BiDirectionalDijkstraSearch Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+
+        if (path != null)
+        {
+            foreach (var pathTile in path)
+            {
+                if (pathTile.x == start.x && pathTile.y == start.y)
+                    continue;
+                if (pathTile.x == end.x && pathTile.y == end.y)
+                    continue;
+
+                DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
+            }
+        }
     }
+
+    public void FindSubGoalDijkstraPath()
+    {
+        DebugDrawer.Clear();
+
+        // Convert visible grid to memory grid
+        var grid = GridController.Ground;
+        var pathGrid = GridController.Path;
+
+        var sizeX = GridController.active.size.x;
+        var sizeY = GridController.active.size.y;
+
+        var memoryGrid = createGraph();
+        // Set grid weights
+        var start = new Vector2Int(-1, -1);
+        var end = new Vector2Int(-1, -1);
+
+        for (var x = 0; x < sizeX; x++)
+            for (var y = 0; y < sizeY; y++)
+            {
+                var pathTile = pathGrid.GetTile(new Vector3Int(x, y, 0));
+                if (pathTile != null)
+                {
+                    if (pathTile == GridController.active.start)
+                    {
+                        start = new Vector2Int(x, y);
+                    }
+                    else if (pathTile == GridController.active.end)
+                    {
+                        end = new Vector2Int(x, y);
+                    }
+                }
+            }
+
+        if (start.x == -1 || end.x == -1)
+        {
+            Debug.Log("Couldn't find any start or end position");
+            return;
+        }
+
+        // List<Node> path;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+
+        SubGoalGrid sgg = new SubGoalGrid(memoryGrid);
+        sgg.ConstructSubgoals(0, 0, sizeX, sizeY);
+        sgg.ConstructEdges(0, 0, sizeX, sizeY);
+
+        Debug.Log(sgg.subGoals.Count);
+
+        sw.Stop();
+        Debug.Log("Preprocessing took " + sw.ElapsedMilliseconds + "ms");
+        // sgg.DrawSubGoals();
+
+        List<BiDirectionalDijkstraSearch.Node> path;
+        var subGoalSearch = new SubGoalBiDirectionalDijkstraSearch(sgg);
+        sw.Restart();
+        path = subGoalSearch.GetPath(start, end);
+        UnityEngine.Debug.Log("SubGoalSearch Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+
+        if (path != null)
+        {
+            for (var i = 0; i < path.Count; i++)
+            {
+                var pathTile = path[i];
+                if (pathTile.x == start.x && pathTile.y == start.y)
+                    continue;
+                if (pathTile.x == end.x && pathTile.y == end.y)
+                    continue;
+
+                if (i > 0)
+                {
+                    DebugDrawer.Draw(new Vector2Int(path[i - 1].x, path[i - 1].y), new Vector2Int(pathTile.x, pathTile.y), Color.blue);
+                }
+                DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
+            }
+        }
+    }
+
 
     public void FindSubGoalPath()
     {
@@ -168,7 +292,7 @@ public class UIController : MonoBehaviour
         // sgg.DrawSubGoals();
 
         List<Node> path;
-        var subGoalSearch = new SubGoalSearch(sgg);
+        var subGoalSearch = new SubGoalAStarSearch(sgg);
         sw.Restart();
         path = subGoalSearch.GetPath(sgg, start, end);
         UnityEngine.Debug.Log("SubGoalSearch Path - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
