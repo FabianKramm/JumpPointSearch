@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace MultiLevelPathfinding
 {
@@ -110,6 +111,22 @@ namespace MultiLevelPathfinding
         public void ConstructOverlayEdges()
         {
 
+        }
+
+        public void DrawGraph()
+        {
+            for (var i = 0; i < overlayVertices.Count; i++)
+            {
+                var vertex = graph.Vertices[overlayVertices[i].OriginalVertex];
+                var x = vertex.GridPosition / graph.sizeY;
+                var y = vertex.GridPosition % graph.sizeY;
+                DebugDrawer.DrawCube(new UnityEngine.Vector2Int(x, y), Vector2Int.one, Color.red);
+
+                var target = overlayVertices[overlayVertices[i].NeighborOverlayVertex].OriginalVertex;
+                var tx = graph.Vertices[target].GridPosition / graph.sizeY;
+                var ty = graph.Vertices[target].GridPosition % graph.sizeY;
+                DebugDrawer.Draw(new Vector2Int(x, y), new Vector2Int(tx, ty), Color.red);
+            }
         }
     }
 }

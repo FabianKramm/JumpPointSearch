@@ -37,7 +37,7 @@ namespace MultiLevelPathfinding
         public Dictionary<int, int> gridToVertexMapping;
 
         private IGrid grid;
-        private int sizeY;
+        public int sizeY;
         public int[] offset;
 
         public Graph(IGrid grid)
@@ -48,12 +48,18 @@ namespace MultiLevelPathfinding
             this.gridToVertexMapping = new Dictionary<int, int>();
             CellsPerLevel = new int[LevelDimensions.Length + 1];
 
-            for (var i = 1; i < LevelDimensions.Length; i++)
+            for (var i = 1; i < LevelDimensions.Length + 1; i++)
             {
                 var cellsPerLevelX = this.grid.GetSize().x / LevelDimensions[i - 1];
                 var cellsPerLevelY = this.grid.GetSize().y / LevelDimensions[i - 1];
 
                 CellsPerLevel[i] = cellsPerLevelX * cellsPerLevelY;
+                if (CellsPerLevel[i] == 0)
+                {
+                    offset[i] = offset[i - 1];
+                    continue;
+                }
+
                 this.offset[i] = this.offset[i - 1] + ((int)Math.Ceiling(Math.Log(cellsPerLevelX * cellsPerLevelY, 2)));
             }
         }
@@ -138,7 +144,7 @@ namespace MultiLevelPathfinding
 
             Edges = new List<Edge>();
             VertexEdgeMapping = new List<int>();
-            Dictionary<long, int> createdEdges = new Dictionary<long, int>();
+            Dictionary<ulong, int> createdEdges = new Dictionary<ulong, int>();
             for (var i = 0; i < Vertices.Count; i++)
             {
                 var x = Vertices[i].GridPosition / sizeY;
@@ -152,7 +158,7 @@ namespace MultiLevelPathfinding
                     EdgeOffset = otherSubGoals.Count > 0 ? VertexEdgeMapping.Count : -1,
                     GridPosition = Vertices[i].GridPosition
                 };
-                
+
                 for (int j = 0, count = otherSubGoals.Count; j < count; j++)
                 {
                     var otherSubGoal = otherSubGoals[j];
@@ -161,7 +167,7 @@ namespace MultiLevelPathfinding
 
                     var ox = Vertices[otherSubGoal].GridPosition / sizeY;
                     var oy = Vertices[otherSubGoal].GridPosition % sizeY;
-                    var edgeID = otherSubGoal << 32 | i;
+                    var edgeID = (ulong)otherSubGoal << 32 | (ulong)(uint)i;
                     if (createdEdges.TryGetValue(edgeID, out int edgeOffset) == false)
                     {
                         Edges.Add(new Edge()
@@ -171,8 +177,9 @@ namespace MultiLevelPathfinding
                             Cost = SubGoalGrid.Diagonal(x, y, ox, oy)
                         });
 
-                        createdEdges[i << 32 | otherSubGoal] = Edges.Count - 1;
-                        VertexEdgeMapping.Add(createdEdges[i << 32 | otherSubGoal]);
+                        var newEdgeID = (ulong)i << 32 | (ulong)(uint)otherSubGoal;
+                        createdEdges[newEdgeID] = Edges.Count - 1;
+                        VertexEdgeMapping.Add(createdEdges[newEdgeID]);
                     }
                     else
                     {
@@ -191,8 +198,10 @@ namespace MultiLevelPathfinding
             {
                 var clearance = Clearance(x, y, SubGoalGrid.directions[i][0], SubGoalGrid.directions[i][1]);
                 var subgoal = new Position(x + clearance * SubGoalGrid.directions[i][0], y + clearance * SubGoalGrid.directions[i][1]);
-                if (gridToVertexMapping.TryGetValue(subgoal.x * sizeY + subgoal.y, out int vertexRef))
+                if (grid.IsWalkable(subgoal.x, subgoal.y) && gridToVertexMapping.TryGetValue(subgoal.x * sizeY + subgoal.y, out int vertexRef))
+                {
                     reachable.Add(vertexRef);
+                }
             }
 
             // Get diagonal reachable
@@ -215,7 +224,10 @@ namespace MultiLevelPathfinding
                         var newPosX = x + i * SubGoalGrid.directions[d][0];
                         var newPosY = y + i * SubGoalGrid.directions[d][1];
                         var j = Clearance(newPosX, newPosY, cx, cy);
-                        if (j <= max && gridToVertexMapping.TryGetValue((newPosX + j * cx) * sizeY + (newPosY + j * cy), out int vertexRef))
+
+                        var subGoalPosX = newPosX + j * cx;
+                        var subGoalPosY = newPosY + j * cy;
+                        if (j <= max && grid.IsWalkable(subGoalPosX, subGoalPosY) && gridToVertexMapping.TryGetValue(subGoalPosX * sizeY + subGoalPosY, out int vertexRef))
                         {
                             reachable.Add(vertexRef);
                             j--;
@@ -237,6 +249,11 @@ namespace MultiLevelPathfinding
             while (true)
             {
                 if (!grid.IsWalkable(x + i * dx, y + i * dy))
+                {
+                    return i;
+                }
+
+                if (dx != 0 && dy != 0 && (!grid.IsWalkable(x + (i + 1) * dx, y + i * dy) || !grid.IsWalkable(x + i * dx, y + (i + 1) * dy)))
                 {
                     return i;
                 }
@@ -263,7 +280,7 @@ namespace MultiLevelPathfinding
                 var cellY = y / LevelDimensions[i];
                 var cellRows = this.grid.GetSize().y / LevelDimensions[i];
 
-                cellNumber = (cellNumber << offset[i + 1]) | ((ulong)cellX * (ulong)cellRows + (ulong)cellY);
+                cellNumber |= ((ulong)cellX * (ulong)cellRows + (ulong)cellY) << offset[i];
             }
 
             return cellNumber;
@@ -278,11 +295,14 @@ namespace MultiLevelPathfinding
                 var y = vertex.GridPosition % sizeY;
 
                 DebugDrawer.DrawCube(new UnityEngine.Vector2Int(x, y), Vector2Int.one, Color.yellow);
-
                 var edgeEnd = (i + 1 == Vertices.Count) ? Vertices.Count : Vertices[i + 1].EdgeOffset;
+                if (edgeEnd == -1)
+                    continue;
+
                 for (var j = vertex.EdgeOffset; j < edgeEnd; j++)
                 {
-                    var target = Edges[j].From == i ? Edges[j].Target : Edges[j].From;
+                    var edge = Edges[VertexEdgeMapping[j]];
+                    var target = edge.From == i ? edge.Target : edge.From;
                     var tx = Vertices[target].GridPosition / sizeY;
                     var ty = Vertices[target].GridPosition % sizeY;
                     DebugDrawer.Draw(new Vector2Int(x, y), new Vector2Int(tx, ty), Color.yellow);

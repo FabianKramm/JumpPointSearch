@@ -119,6 +119,7 @@ public class UIController : MonoBehaviour
         overlayGraph.ConstructOverlayNodes();
 
         graph.DrawGraph();
+        overlayGraph.DrawGraph();
     }
 
     public void FindBiDirectionalDijkstraPath()
@@ -437,7 +438,7 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
-        var memoryGrid = new ChunkGrid(sizeX, sizeY, ChunkSize);
+        var memoryGrid = new ArrayGrid(sizeX, sizeY);
         for (var x = 0; x < sizeX; x++)
             for (var y = 0; y < sizeY; y++)
             {
