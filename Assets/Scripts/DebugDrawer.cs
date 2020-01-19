@@ -48,6 +48,11 @@ public class DebugDrawer : MonoBehaviour
         active.lines.Add(new Line(new Vector3(from.x + 0.5f, from.y + 0.5f, 0), new Vector3(to.x + 0.5f, to.y + 0.5f, 0), color));
     }
 
+    public static void DrawNoOffset(Vector2Int from, Vector2Int to, Color color)
+    {
+        active.lines.Add(new Line(new Vector3(from.x, from.y, 0), new Vector3(to.x, to.y, 0), color));
+    }
+
     public static void DrawCube(Vector2Int center, Vector2Int size, Color color)
     {
         active.cubes.Add(new Cube(new Vector3(center.x + 0.5f, center.y + 0.5f, 0), new Vector3(size.x, size.y, 0), color));

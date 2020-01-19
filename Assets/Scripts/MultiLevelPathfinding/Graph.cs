@@ -10,8 +10,8 @@ namespace MultiLevelPathfinding
     {
         private static int[] LevelDimensions = new int[]
         {
+            32,
             64,
-            128,
             256
         };
 
@@ -288,6 +288,19 @@ namespace MultiLevelPathfinding
 
         public void DrawGraph()
         {
+            for (var i = 0; i < LevelDimensions.Length; i++)
+            {
+                var chunkSizeX = grid.GetSize().x / LevelDimensions[i];
+                var chunkSizeY = grid.GetSize().y / LevelDimensions[i];
+
+                for (var x = 0; x < chunkSizeX; x++) 
+                    for (var y = 0; y < chunkSizeY; y++)
+                    {
+                        DebugDrawer.DrawNoOffset(new Vector2Int(x * LevelDimensions[i], y * LevelDimensions[i] + LevelDimensions[i]), new Vector2Int(x * LevelDimensions[i] + LevelDimensions[i], y * LevelDimensions[i] + LevelDimensions[i]), Color.magenta);
+                        DebugDrawer.DrawNoOffset(new Vector2Int(x * LevelDimensions[i] + LevelDimensions[i], y * LevelDimensions[i] + LevelDimensions[i]), new Vector2Int(x * LevelDimensions[i] + LevelDimensions[i], y * LevelDimensions[i]), Color.magenta);
+                    }
+            }
+
             for (var i = 0; i < Vertices.Count; i++)
             {
                 var vertex = Vertices[i];
@@ -295,7 +308,7 @@ namespace MultiLevelPathfinding
                 var y = vertex.GridPosition % sizeY;
 
                 DebugDrawer.DrawCube(new UnityEngine.Vector2Int(x, y), Vector2Int.one, Color.yellow);
-                var edgeEnd = (i + 1 == Vertices.Count) ? Vertices.Count : Vertices[i + 1].EdgeOffset;
+                var edgeEnd = (i + 1 == Vertices.Count) ? VertexEdgeMapping.Count : Vertices[i + 1].EdgeOffset;
                 if (edgeEnd == -1)
                     continue;
 

@@ -117,8 +117,9 @@ public class UIController : MonoBehaviour
 
         var overlayGraph = new OverlayGraph(graph);
         overlayGraph.ConstructOverlayNodes();
+        overlayGraph.ConstructOverlayEdges();
 
-        graph.DrawGraph();
+        // graph.DrawGraph();
         overlayGraph.DrawGraph();
     }
 

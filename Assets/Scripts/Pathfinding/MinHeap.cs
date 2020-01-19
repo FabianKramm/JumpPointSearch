@@ -111,6 +111,11 @@ namespace Pathfinding
             }
         }
 
+        public TCost PeekCost()
+        {
+            return m_items[0].Cost;
+        }
+
         /// <summary>
         /// Returns the item with the lowest cost without removing it from the heap
         /// </summary>
