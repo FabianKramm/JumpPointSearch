@@ -15,16 +15,6 @@ namespace Pathfinding
             this.edges = new SubGoalEdge[0];
         }
 
-        public void AddEdge(int x, int y, float cost)
-        {
-
-        }
-
-        public void RemoveEdge(int x, int y)
-        {
-
-        }
-
         public SubGoal Clone()
         {
             var cloned = new SubGoal(x, y);

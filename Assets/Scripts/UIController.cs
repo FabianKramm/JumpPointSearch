@@ -1,4 +1,5 @@
-﻿using Pathfinding;
+﻿using MultiLevelPathfinding;
+using Pathfinding;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
@@ -7,7 +8,7 @@ using UnityEngine.UI;
 public class UIController : MonoBehaviour
 {
     private static int ChunkSize = 128;
-
+    
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
         return Mathf.PerlinNoise((x + offset) * scale, (y + offset) * scale);
@@ -99,6 +100,25 @@ public class UIController : MonoBehaviour
     public void Clear()
     {
         DebugDrawer.Clear();
+    }
+
+    public void FindMultiLevelPath()
+    {
+        DebugDrawer.Clear();
+        var pathGrid = GridController.Path;
+        var memoryGrid = createGraph();
+
+        var sizeX = GridController.active.size.x;
+        var sizeY = GridController.active.size.y;
+
+        var graph = new Graph(memoryGrid);
+        graph.ConstructSubgoals();
+        graph.ConstructEdges();
+
+        var overlayGraph = new OverlayGraph(graph);
+        overlayGraph.ConstructOverlayNodes();
+
+        graph.DrawGraph();
     }
 
     public void FindBiDirectionalDijkstraPath()
@@ -230,8 +250,9 @@ public class UIController : MonoBehaviour
 
                 if (i > 0)
                 {
-                    DebugDrawer.Draw(new Vector2Int(path[i - 1].x, path[i - 1].y), new Vector2Int(pathTile.x, pathTile.y), Color.blue);
+                   DebugDrawer.Draw(new Vector2Int(path[i - 1].x, path[i - 1].y), new Vector2Int(pathTile.x, pathTile.y), Color.blue);
                 }
+
                 DebugDrawer.DrawCube(new Vector2Int(pathTile.x, pathTile.y), Vector2Int.one, Color.blue);
             }
         }
@@ -289,7 +310,7 @@ public class UIController : MonoBehaviour
 
         sw.Stop();
         Debug.Log("Preprocessing took " + sw.ElapsedMilliseconds + "ms");
-        // sgg.DrawSubGoals();
+        sgg.DrawSubGoals();
 
         List<Node> path;
         var subGoalSearch = new SubGoalAStarSearch(sgg);

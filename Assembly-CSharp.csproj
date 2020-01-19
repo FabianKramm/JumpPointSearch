@@ -65,6 +65,8 @@
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\DebugDrawer.cs" />
     <Compile Include="Assets\Scripts\GridController.cs" />
+    <Compile Include="Assets\Scripts\MultiLevelPathfinding\Graph.cs" />
+    <Compile Include="Assets\Scripts\MultiLevelPathfinding\OverlayGraph.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Algorithms\AStarSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Algorithms\BiDirectionalDijkstraSearch.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Algorithms\JumpPointSearch.cs" />

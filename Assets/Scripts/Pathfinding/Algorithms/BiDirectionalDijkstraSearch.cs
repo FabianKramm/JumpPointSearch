@@ -69,10 +69,13 @@ namespace Pathfinding
             sizeY = grid.GetSize().y;
         }
 
-        public virtual List<Node> GetPath(Vector2Int start, Vector2Int target)
+        public virtual List<Node> GetPath(Vector2Int start, Vector2Int target, float upperBound = float.PositiveInfinity)
         {
+            nodes = new Dictionary<long, Node>();
+
             var startNode = GetStartNode(start);
-            var endNode = GetStartNode(target);
+            var endNode = GetEndNode(target);
+            var neighbors = new Neighbor[8];
 
             middleNode = null;
             bestPathLength = float.PositiveInfinity;
@@ -80,15 +83,9 @@ namespace Pathfinding
             openA = new MinHeap<Node, float>();
             openB = new MinHeap<Node, float>();
 
-            nodes = new Dictionary<long, Node>();
-
             openA.Add(startNode, 0);
             openB.Add(endNode, 0);
 
-            var neighbors = new Neighbor[8];
-
-            var counterA = 0;
-            var counterB = 0;
             while (openA.Count > 0 && openB.Count > 0)
             {
                 var mtmp = openA.Peek().costA + openB.Peek().costB;
@@ -96,17 +93,24 @@ namespace Pathfinding
                 {
                     return tracebackPath(middleNode);
                 }
+                if (mtmp >= upperBound)
+                {
+                    return null;
+                }
 
-                if (openA.Count + counterA < openB.Count + counterB)
+                expandForwardFrontier(openA.Remove(), ref neighbors);
+
+                mtmp = openA.Peek().costA + openB.Peek().costB;
+                if (mtmp >= bestPathLength)
                 {
-                    counterA++;
-                    expandForwardFrontier(openA.Remove(), ref neighbors);
+                    return tracebackPath(middleNode);
                 }
-                else
+                if (mtmp >= upperBound)
                 {
-                    counterB++;
-                    expandBackwardFrontier(openB.Remove(), ref neighbors);
+                    return null;
                 }
+
+                expandBackwardFrontier(openB.Remove(), ref neighbors);
             }
 
             return null;
@@ -198,8 +202,8 @@ namespace Pathfinding
 #if DEBUG_PATHFINDING
             if (showDebug)
             {
-                DebugDrawer.Draw(new Vector2Int(node.parentA.x, node.parentA.y), new Vector2Int(node.x, node.y), Color.yellow);
-                DebugDrawer.DrawCube(new Vector2Int(node.x, node.y), Vector2Int.one, Color.yellow);
+                DebugDrawer.Draw(new Vector2Int(node.parentA.x, node.parentA.y), new Vector2Int(node.x, node.y), Color.white);
+                DebugDrawer.DrawCube(new Vector2Int(node.x, node.y), Vector2Int.one, Color.white);
             }
 #endif
 
@@ -272,7 +276,6 @@ namespace Pathfinding
         {
             Node current = touch;
             List<Node> path = new List<Node>();
-
             while (current != null)
             {
                 path.Add(current);
@@ -289,7 +292,7 @@ namespace Pathfinding
                     current = current.parentB;
                 }
             }
-
+            
             return path;
         }
     }

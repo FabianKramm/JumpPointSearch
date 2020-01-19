@@ -73,7 +73,7 @@ public class DebugDrawer : MonoBehaviour
         foreach(var cube in cubes)
         {
             Gizmos.color = cube.color;
-            Gizmos.DrawCube(cube.center, cube.size);
+            Gizmos.DrawCube(cube.center, new Vector3(0.5f, 0.5f, 0));
         }
     }
 }

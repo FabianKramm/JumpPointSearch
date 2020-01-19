@@ -48,6 +48,8 @@ namespace Pathfinding
         private long sizeY;
         public Dictionary<long, SubGoal> subGoals;
 
+        private SubGoalBiDirectionalDijkstraSearch subGoalSearch;
+
         public SubGoalGrid(IGrid grid)
         {
             this.grid = grid;
@@ -102,11 +104,15 @@ namespace Pathfinding
             while (true)
             {
                 if (!grid.IsWalkable(x + i * dx, y + i * dy))
+                {
                     return i;
+                }
 
                 i = i + 1;
                 if (IsSubGoal(x + i * dx, y + i * dy))
+                {
                     return i;
+                }
             }
         }
 
@@ -125,13 +131,19 @@ namespace Pathfinding
         }
 
         /*
-         * TODO: FINISH TWO LEVEL SUB GOAL GRIDS
         public float CostOtherPath(SubGoal from, SubGoal to, SubGoal without)
         {
-            SubGoalSearch subGoalSearch = new SubGoalSearch(this);
+            if (subGoalSearch == null)
+            {
+                subGoalSearch = new SubGoalBiDirectionalDijkstraSearch(this);
+            }
+            else
+            {
+                subGoalSearch.Reset();
+            }
 
             subGoalSearch.FakeRemoveSubGoal(without);
-            var path = subGoalSearch.GetPath(this, new Vector2Int(from.x, from.y), new Vector2Int(to.x, to.y));
+            var path = subGoalSearch.GetPath(new Vector2Int(from.x, from.y), new Vector2Int(to.x, to.y));
             if (path == null)
             {
                 return -1;
@@ -140,12 +152,12 @@ namespace Pathfinding
             float cost = 0;
             for (var i = 1; i < path.Count; i++)
             {
-                cost += Diagonal(path[i], path[i - 1]);
+                cost += ;
             }
 
             return cost;
         }
-
+        /*
         public bool IsNecessaryToConnect(SubGoal from, SubGoal to, SubGoal without)
         {
             if (IsDirectHReachable(from.x, from.y, to))
@@ -238,20 +250,34 @@ namespace Pathfinding
             return prunedGrid;
         }*/
 
-        public virtual float Diagonal(SubGoal a, SubGoal b)
+        public static float Diagonal(int ax, int ay, int bx, int by)
         {
-            var dx = Math.Abs(a.x - b.x);
-            var dy = Math.Abs(a.y - b.y);
+            var dx = Math.Abs(ax - bx);
+            var dy = Math.Abs(ay - by);
 
             return AStarSearch.LateralCost * (float)(dx + dy) + (AStarSearch.DiagonalCost - 2f * AStarSearch.LateralCost) * (float)Math.Min(dx, dy);
+            
+            //return Mathf.Sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
         }
 
-        public virtual float Diagonal(Node a, Node b)
+        public static float Diagonal(SubGoal a, SubGoal b)
         {
             var dx = Math.Abs(a.x - b.x);
             var dy = Math.Abs(a.y - b.y);
 
             return AStarSearch.LateralCost * (float)(dx + dy) + (AStarSearch.DiagonalCost - 2f * AStarSearch.LateralCost) * (float)Math.Min(dx, dy);
+            
+            //return Mathf.Sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+        }
+
+        public static float Diagonal(Node a, Node b)
+        {
+            var dx = Math.Abs(a.x - b.x);
+            var dy = Math.Abs(a.y - b.y);
+
+            return AStarSearch.LateralCost * (float)(dx + dy) + (AStarSearch.DiagonalCost - 2f * AStarSearch.LateralCost) * (float)Math.Min(dx, dy);
+            
+            //return Mathf.Sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));    
         }
 
         public bool IsDirectHReachable(int x, int y, SubGoal subGoal)
@@ -308,7 +334,7 @@ namespace Pathfinding
             for (int i = 0; i < 8; i++)
             {
                 var clearance = Clearance(x, y, directions[i][0], directions[i][1]);
-                var subgoal = new Position(x +clearance * directions[i][0], y + clearance * directions[i][1]);
+                var subgoal = new Position(x + clearance * directions[i][0], y + clearance * directions[i][1]);
                 if (subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out SubGoal subGoalRef))
                     reachable.Add(subGoalRef);
             }
@@ -353,8 +379,6 @@ namespace Pathfinding
         {
             return subGoals.ContainsKey(x * sizeY + y);
         }
-
-
 
         public void DrawSubGoals()
         {
