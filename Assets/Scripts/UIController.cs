@@ -2,13 +2,14 @@
 using Pathfinding;
 using System.Collections.Generic;
 using System.Threading;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
-{
-    private static int ChunkSize = 128;
-    
+{   
     protected static float GetPerlinValue(int x, int y, float scale, float offset)
     {
         return Mathf.PerlinNoise((x + offset) * scale, (y + offset) * scale);
@@ -111,16 +112,14 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
-        var graph = new Graph(memoryGrid);
-        graph.ConstructSubgoals();
-        graph.ConstructEdges();
+        var graph = new OverlayGraph(memoryGrid);
 
-        var overlayGraph = new OverlayGraph(graph);
-        overlayGraph.ConstructOverlayNodes();
-        overlayGraph.ConstructOverlayEdges();
+        graph.BuildChunk(0);
+        graph.DrawCellBorders();
+        graph.DrawOverlayGraph(1);
 
         // graph.DrawGraph();
-        overlayGraph.DrawGraph();
+        // overlayGraph.DrawGraph();
     }
 
     public void FindBiDirectionalDijkstraPath()

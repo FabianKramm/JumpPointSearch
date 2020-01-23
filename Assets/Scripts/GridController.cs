@@ -67,7 +67,9 @@ public class GridController : MonoBehaviour
         {
             var position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             var positionInt = new Vector3Int((int)position.x, (int)position.y, 0);
-            var tile = Ground.GetTile(positionInt);
+
+            Debug.Log("Clicked at: " + positionInt.x + " - " + positionInt.y);
+            /*var tile = Ground.GetTile(positionInt);
 
             if (tile == walkable)
             {
@@ -80,7 +82,7 @@ public class GridController : MonoBehaviour
             else if (tile == road)
             {
                 Ground.SetTile(positionInt, walkable);
-            }
+            }*/
         }
         else if (Input.GetMouseButtonDown(1))
         {
