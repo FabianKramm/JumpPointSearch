@@ -82,11 +82,15 @@ namespace Pathfinding
             openA.Add(startNode, 0);
             openB.Add(endNode, 0);
 
+            var ticks = 0;
             while (openA.Count > 0 && openB.Count > 0)
             {
+                ticks++;
+
                 var mtmp = openA.Peek().costA + openB.Peek().costB;
                 if (mtmp >= bestPathLength)
                 {
+                    Debug.Log("Found path in " + ticks + " ticks");
                     return tracebackPath(middleNode);
                 }
                 if (mtmp >= upperBound)
@@ -95,6 +99,7 @@ namespace Pathfinding
                 }
 
                 expandForwardFrontier(openA.Remove(), ref neighbors);
+                ticks++;
 
                 mtmp = openA.Peek().costA + openB.Peek().costB;
                 if (mtmp >= bestPathLength)

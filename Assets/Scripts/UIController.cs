@@ -112,14 +112,80 @@ public class UIController : MonoBehaviour
         var sizeX = GridController.active.size.x;
         var sizeY = GridController.active.size.y;
 
+        // Set grid weights
+        var start = new Vector2Int(-1, -1);
+        var end = new Vector2Int(-1, -1);
+
+        for (var x = 0; x < sizeX; x++)
+            for (var y = 0; y < sizeY; y++)
+            {
+                var pathTile = pathGrid.GetTile(new Vector3Int(x, y, 0));
+                if (pathTile != null)
+                {
+                    if (pathTile == GridController.active.start)
+                    {
+                        start = new Vector2Int(x, y);
+                    }
+                    else if (pathTile == GridController.active.end)
+                    {
+                        end = new Vector2Int(x, y);
+                    }
+                }
+            }
+
+        if (start.x == -1 || end.x == -1)
+        {
+            Debug.Log("Couldn't find any start or end position");
+            return;
+        }
+
+
         var graph = new OverlayGraph(memoryGrid);
 
+
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
         graph.BuildChunk(0);
-        graph.DrawCellBorders();
-        graph.DrawOverlayGraph(1);
+
+        UnityEngine.Debug.Log("MultiLayerGraph Building took " + sw.ElapsedMilliseconds + " ms");
+        sw.Restart();
+
+        List<OverlayGraphPathfinder.GraphNode> path;
+        var pathfinder = new OverlayGraphPathfinder(graph);
+        path = pathfinder.BidirectionalDijkstra(start.x, start.y, end.x, end.y);
+        UnityEngine.Debug.Log("MultiLayerGraph - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+
+        //  graph.DrawCellBorders();
+        // graph.DrawOverlayGraph(1);
 
         // graph.DrawGraph();
         // overlayGraph.DrawGraph();
+
+        if (path != null)
+        {
+            foreach (var pathTile in path)
+            {
+                var chunk = graph.GetChunk(pathTile.ChunkID);
+                int gridPosition;
+                if (pathTile.QueryLevel > 0)
+                {
+                    gridPosition = chunk.vertices[chunk.overlayVertices[pathTile.VertexID].OriginalVertex].GridPosition;
+                }
+                else
+                {
+                    gridPosition = chunk.vertices[pathTile.VertexID].GridPosition;
+                }
+
+                var x = gridPosition / graph.sizeY;
+                var y = gridPosition % graph.sizeY;
+                if (x == start.x && y == start.y)
+                    continue;
+                if (x == end.x && y == end.y)
+                    continue;
+
+                DebugDrawer.DrawCube(new Vector2Int(x, y), Vector2Int.one, Color.blue);
+            }
+        }
     }
 
     public void FindBiDirectionalDijkstraPath()

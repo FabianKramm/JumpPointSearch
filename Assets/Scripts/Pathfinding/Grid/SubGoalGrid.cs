@@ -103,7 +103,12 @@ namespace Pathfinding
             int i = 0;
             while (true)
             {
-                if (!grid.IsWalkable(x + i * dx, y + i * dy))
+                if (i >= 200 || !grid.IsWalkable(x + i * dx, y + i * dy))
+                {
+                    return i;
+                }
+
+                if (dx != 0 && dy != 0 && (!grid.IsWalkable(x + (i + 1) * dx, y + i * dy) || !grid.IsWalkable(x + i * dx, y + (i + 1) * dy)))
                 {
                     return i;
                 }
@@ -335,7 +340,7 @@ namespace Pathfinding
             {
                 var clearance = Clearance(x, y, directions[i][0], directions[i][1]);
                 var subgoal = new Position(x + clearance * directions[i][0], y + clearance * directions[i][1]);
-                if (subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out SubGoal subGoalRef))
+                if (grid.IsWalkable(subgoal.x, subgoal.y) && subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out SubGoal subGoalRef))
                     reachable.Add(subGoalRef);
             }
 
@@ -359,7 +364,7 @@ namespace Pathfinding
                         var newPosX = x + i * directions[d][0];
                         var newPosY = y + i * directions[d][1];
                         var j = Clearance(newPosX, newPosY, cx, cy);
-                        if (j <= max && subGoals.TryGetValue((newPosX + j * cx) * sizeY + (newPosY + j * cy), out SubGoal subGoal))
+                        if (j <= max && grid.IsWalkable(newPosX + j * cx, newPosY + j * cy) && subGoals.TryGetValue((newPosX + j * cx) * sizeY + (newPosY + j * cy), out SubGoal subGoal))
                         {
                             reachable.Add(subGoal);
                             j--;

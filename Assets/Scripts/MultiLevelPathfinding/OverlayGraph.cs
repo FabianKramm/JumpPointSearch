@@ -7,25 +7,37 @@ namespace MultiLevelPathfinding
 {
     public class OverlayGraph
     {
+        public struct VertexID
+        {
+            public int ID;
+            public int ChunkID;
+        }
+
         public static int[] LevelDimensions = new int[]
         {
-            16,
             32,
-            // 256
+            64,
+            128
         };
 
         private IGrid grid;
         public int[] offset;
         public int[] cellsPerLevel;
 
+        public int sizeY;
         public int chunkSize;
-        public Dictionary<int, OverlayGraphChunk> graphChunks;
+        public int chunkSizeX;
+        public int chunkSizeY;
+        public OverlayGraphChunk[] graphChunks;
 
         public OverlayGraph(IGrid grid)
         {
-            this.graphChunks = new Dictionary<int, OverlayGraphChunk>();
             this.grid = grid;
+            this.sizeY = grid.GetSize().y;
             this.chunkSize = LevelDimensions[LevelDimensions.Length - 1];
+            this.chunkSizeX = grid.GetSize().x / chunkSize;
+            this.chunkSizeY = sizeY / chunkSize;
+            this.graphChunks = new OverlayGraphChunk[chunkSizeX * chunkSizeY];
             this.offset = new int[LevelDimensions.Length + 1];
             this.cellsPerLevel = new int[LevelDimensions.Length + 1];
 
@@ -68,12 +80,41 @@ namespace MultiLevelPathfinding
                     }
             }
         }
+        
+        public int GetChunkID(int x, int y)
+        {
+            return (x / chunkSize) * chunkSizeY + (y / chunkSize);
+        }
+
+        public int GetVertexID(int x, int y, int chunkID)
+        {
+            return graphChunks[chunkID].gridPositionToVertex[x * sizeY + y];
+        }
+
+        public int GetChunkID(int gridPosition)
+        {
+            return ((gridPosition / sizeY) / chunkSize) * chunkSizeY + ((gridPosition % sizeY) / chunkSize);
+        }
+
+        public Vertex GetVertexAtGridPosition(int gridPosition)
+        {
+            var chunk = GetChunk(GetChunkID(gridPosition));
+            return chunk.vertices[chunk.gridPositionToVertex[gridPosition]];
+        }
+
+        public OverlayGraphChunk GetChunk(int chunkID)
+        {
+            return graphChunks[chunkID];
+        }
 
         public void DrawGraph()
         {
             foreach(var chunk in graphChunks)
             {
-                chunk.Value.DrawGraph();
+                if (chunk == null)
+                    continue;
+
+                chunk.DrawGraph();
             }
         }
 
@@ -81,7 +122,10 @@ namespace MultiLevelPathfinding
         {
             foreach (var chunk in graphChunks)
             {
-                chunk.Value.DrawOverlayGraph(level);
+                if (chunk == null)
+                    continue;
+
+                chunk.DrawOverlayGraph(level);
             }
         }
     }

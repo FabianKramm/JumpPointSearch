@@ -1,6 +1,7 @@
 ﻿using Pathfinding;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace MultiLevelPathfinding
@@ -10,19 +11,19 @@ namespace MultiLevelPathfinding
         private IGrid grid;
         private OverlayGraph overlayGraph;
         
-        private int chunkNumber;
+        public int chunkNumber;
         private int chunkSizeY;
         private int sizeY;
 
-        private List<Vertex> vertices;
-        private List<int> vertexEdgeMapping;
-        private List<Edge> edges;
+        public List<Vertex> vertices;
+        public List<int> vertexEdgeMapping;
+        public List<Edge> edges;
 
-        private List<OverlayVertex> overlayVertices;
-        private List<int>[][] overlayVerticesCellMapping;
+        public List<OverlayVertex> overlayVertices;
+        public List<int>[][] overlayVerticesCellMapping;
 
-        private Dictionary<ulong, int> edgeToOverlayVertex;
-        private Dictionary<int, int> gridPositionToVertex;
+        public Dictionary<ulong, int> edgeToOverlayVertex;
+        public Dictionary<int, int> gridPositionToVertex;
 
         public OverlayGraphChunk(OverlayGraph overlayGraph, IGrid grid, int chunkNumber)
         {
@@ -40,6 +41,20 @@ namespace MultiLevelPathfinding
             ConstructEdges(v, vd);
             ConstructOverlayNodes();
             ConstructOverlayEdges();
+
+            // Update vertices with the real cell number
+            for (var i = 0; i < vertices.Count; i++)
+            {
+                var x = vertices[i].GridPosition / sizeY;
+                var y = vertices[i].GridPosition % sizeY;
+
+                vertices[i] = new Vertex
+                {
+                    GridPosition = vertices[i].GridPosition,
+                    EdgeOffset = vertices[i].EdgeOffset,
+                    CellNumber = OverlayGraphUtilities.GetCellNumber(x, y, sizeY, overlayGraph.offset)
+                };
+            }
         }
 
         // ConstructVertices constructs vertices within the specified area and tries to connect them
@@ -78,7 +93,7 @@ namespace MultiLevelPathfinding
                         {
                             if (grid.IsWalkable(x + SubGoalGrid.directions[d][0], y) && grid.IsWalkable(x, y + SubGoalGrid.directions[d][1]))
                             {
-                                includingNeighborVertices.Add(new Vertex()
+                                includingNeighborVertices.Add(new Vertex
                                 {
                                     GridPosition = gridPosition,
                                     CellNumber = OverlayGraphUtilities.GetCellNumber(x, y, sizeY, overlayGraph.offset),
@@ -132,7 +147,7 @@ namespace MultiLevelPathfinding
                 // Get the real vertex id
                 if (gridPositionToVertex.TryGetValue(gridPosition, out int vID))
                 {
-                    vertices[vID] = new Vertex()
+                    vertices[vID] = new Vertex
                     {
                         EdgeOffset = vertexEdgeMapping.Count,
                         GridPosition = gridPosition,
@@ -351,7 +366,6 @@ namespace MultiLevelPathfinding
             }
         }
 
-
         public void ConstructOverlayEdges()
         {
             for (var l = 1; l < overlayVerticesCellMapping.Length; l++)
@@ -367,17 +381,27 @@ namespace MultiLevelPathfinding
 
         public void constructLevel(int level)
         {
+            Task[] tasks = new Task[overlayVerticesCellMapping[level].Length];
+
             for (var c = 0; c < overlayVerticesCellMapping[level].Length; c++)
             {
                 if (level == 1)
                 {
-                    constructCellBase(c);
+                    tasks[c] = Task.Factory.StartNew((object cell) =>
+                    {
+                        constructCellBase((int)cell);
+                    }, c);
                 }
                 else
                 {
-                    constructCellOverlay(level, c);
+                    tasks[c] = Task.Factory.StartNew((object cell) =>
+                    {
+                        constructCellOverlay(level, (int)cell);
+                    }, c);
                 }
             }
+
+            Task.WaitAll(tasks);
         }
 
         public void constructCellOverlay(int level, int c)
@@ -388,10 +412,11 @@ namespace MultiLevelPathfinding
                 return;
 
             var round = 0;
-            var open = new Dictionary<int, int>();
+            var open = new Dictionary<int, float>();
             for (var i = 0; i < cell.Count; i++)
             {
                 queue.Clear();
+                open.Clear();
 
                 var start = overlayVertices[cell[i]];
                 start.OverlayEdges[level - 1] = new List<OverlayEdge>();
@@ -421,6 +446,15 @@ namespace MultiLevelPathfinding
                             {
                                 if (start.OverlayEdges[level - 1][x].NeighborOverlayVertex == currentOverlayVertex)
                                 {
+                                    if (currentCost < start.OverlayEdges[0][x].Cost)
+                                    {
+                                        start.OverlayEdges[0][x] = new OverlayEdge
+                                        {
+                                            NeighborOverlayVertex = currentOverlayVertex,
+                                            Cost = currentCost
+                                        };
+                                    }
+
                                     wasFound = true;
                                     break;
                                 }
@@ -439,24 +473,26 @@ namespace MultiLevelPathfinding
                         }
 
                         var newCost = currentCost + neighbors[j].Cost;
-                        var found = open.TryGetValue(target, out int nodeRound);
-                        if (!found || nodeRound != round)
+                        var found = open.TryGetValue(target, out float oldCost);
+                        if (!found)
                         {
                             queue.Add(target, newCost);
-                            open[target] = round;
+                            open[target] = newCost;
+                        }
+                        else if (newCost < oldCost)
+                        {
+                            queue.Update(target, newCost);
+                            open[target] = newCost;
                         }
                     }
                 }
-
-                round++;
             }
         }
 
         private void constructCellBase(int c)
         {
             var queue = new MinHeap<int, float>();
-            var round = 0;
-            var open = new Dictionary<int, int>();
+            var open = new Dictionary<int, float>();
 
             var cell = overlayVerticesCellMapping[1][c];
             if (cell == null)
@@ -465,6 +501,7 @@ namespace MultiLevelPathfinding
             for (var i = 0; i < cell.Count; i++)
             {
                 queue.Clear();
+                open.Clear();
 
                 var start = overlayVertices[cell[i]];
                 start.OverlayEdges[0] = new List<OverlayEdge>();
@@ -475,7 +512,7 @@ namespace MultiLevelPathfinding
                 });
 
                 queue.Add(start.OriginalVertex, 0);
-                open[start.OriginalVertex] = round;
+                open[start.OriginalVertex] = 0;
                 while (queue.Count != 0)
                 {
                     var currentCost = queue.PeekCost();
@@ -495,6 +532,14 @@ namespace MultiLevelPathfinding
                                 {
                                     if (start.OverlayEdges[0][x].NeighborOverlayVertex == value)
                                     {
+                                        if (currentCost < start.OverlayEdges[0][x].Cost) {
+                                            start.OverlayEdges[0][x] = new OverlayEdge
+                                            {
+                                                NeighborOverlayVertex = value,
+                                                Cost = currentCost
+                                            };
+                                        }
+
                                         wasFound = true;
                                         break;
                                     }
@@ -514,16 +559,19 @@ namespace MultiLevelPathfinding
                         }
 
                         var newCost = currentCost + edge.Cost;
-                        var found = open.TryGetValue(target, out int nodeRound);
-                        if (!found || nodeRound != round)
+                        var found = open.TryGetValue(target, out float oldCost);
+                        if (!found)
                         {
                             queue.Add(target, newCost);
-                            open[target] = round;
+                            open[target] = newCost;
+                        }
+                        else if (newCost < oldCost)
+                        {
+                            queue.Update(target, newCost);
+                            open[target] = newCost;
                         }
                     }
                 }
-
-                round++;
             }
         }
 

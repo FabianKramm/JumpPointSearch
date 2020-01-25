@@ -10,7 +10,6 @@ namespace MultiLevelPathfinding
     {
         public int GridPosition;
         public int EdgeOffset;
-        public byte Flags;
         public ulong CellNumber;
     }
 }
