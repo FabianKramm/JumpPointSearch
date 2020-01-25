@@ -39,8 +39,8 @@ namespace MultiLevelPathfinding
             var (v, vd) = ConstructVertices();
 
             ConstructEdges(v, vd);
-            ConstructOverlayNodes();
-            ConstructOverlayEdges();
+            // ConstructOverlayNodes();
+            // ConstructOverlayEdges();
 
             // Update vertices with the real cell number
             for (var i = 0; i < vertices.Count; i++)
@@ -593,11 +593,17 @@ namespace MultiLevelPathfinding
                     var edge = edges[vertexEdgeMapping[j]];
                     var target = edge.FromVertex == i ? edge.ToVertex : edge.FromVertex;
                     if (target == -1)
-                        continue;
-
-                    var tx = vertices[target].GridPosition / sizeY;
-                    var ty = vertices[target].GridPosition % sizeY;
-                    DebugDrawer.Draw(new Vector2Int(x, y), new Vector2Int(tx, ty), Color.yellow);
+                    {
+                        var tx = edge.ToVertexGridPosition / sizeY;
+                        var ty = edge.ToVertexGridPosition % sizeY;
+                        DebugDrawer.Draw(new Vector2Int(x, y), new Vector2Int(tx, ty), Color.yellow);
+                    }
+                    else
+                    {
+                        var tx = vertices[target].GridPosition / sizeY;
+                        var ty = vertices[target].GridPosition % sizeY;
+                        DebugDrawer.Draw(new Vector2Int(x, y), new Vector2Int(tx, ty), Color.yellow);
+                    }
                 }
             }
         }

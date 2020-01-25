@@ -218,7 +218,8 @@ namespace MultiLevelPathfinding
                 else
                 {
                     var overlayID = ((ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32) | (uint)chunk.vertices[min.VertexID].GridPosition;
-                    var overlayVertex = edgeTargetChunk.edgeToOverlayVertex[overlayID];
+                    if (edgeTargetChunk.edgeToOverlayVertex.TryGetValue(overlayID, out int overlayVertex) == false)
+                        continue;
 
                     // Get the overlay node
                     var node = getNodeOverlay(overlayVertex, edgeTargetChunkID, queryLevel);
@@ -304,7 +305,8 @@ namespace MultiLevelPathfinding
                 else
                 {
                     var overlayID = ((ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32) | (uint)chunk.vertices[min.VertexID].GridPosition;
-                    var overlayVertex = edgeTargetChunk.edgeToOverlayVertex[overlayID];
+                    if (edgeTargetChunk.edgeToOverlayVertex.TryGetValue(overlayID, out int overlayVertex) == false)
+                        continue;
 
                     // Get the overlay node
                     var node = getNodeOverlay(overlayVertex, edgeTargetChunkID, queryLevel);
@@ -354,7 +356,10 @@ namespace MultiLevelPathfinding
                 {
                     neighborChunk = graph.GetChunk(graph.GetChunkID(chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition));
                     var overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
-                    neighborOverlayVertexID = neighborChunk.edgeToOverlayVertex[overlayNodeID];
+                    if (neighborChunk.edgeToOverlayVertex.TryGetValue(overlayNodeID, out neighborOverlayVertexID) == false)
+                    {
+                        continue;
+                    }
                 }
                 else
                 {
@@ -385,8 +390,11 @@ namespace MultiLevelPathfinding
                     if (neighborOverlayVertex.NeighborOverlayVertex == -1)
                     {
                         targetNeighborChunk = graph.GetChunk(graph.GetChunkID(neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition));
-                        var targetNeighborNodeID = (ulong)(uint)neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
-                        targetNeighborOverlayVertexID = targetNeighborChunk.edgeToOverlayVertex[targetNeighborNodeID];
+                        var targetNeighborNodeID = ((ulong)(uint)neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition) << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
+                        if (targetNeighborChunk.edgeToOverlayVertex.TryGetValue(targetNeighborNodeID, out targetNeighborOverlayVertexID) == false)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
@@ -473,7 +481,10 @@ namespace MultiLevelPathfinding
                 {
                     neighborChunk = graph.GetChunk(graph.GetChunkID(chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition));
                     var overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
-                    neighborOverlayVertexID = neighborChunk.edgeToOverlayVertex[overlayNodeID];
+                    if (neighborChunk.edgeToOverlayVertex.TryGetValue(overlayNodeID, out neighborOverlayVertexID) == false)
+                    {
+                        continue;
+                    }
                 }
                 else
                 {
@@ -506,7 +517,10 @@ namespace MultiLevelPathfinding
                     {
                         targetNeighborChunk = graph.GetChunk(graph.GetChunkID(neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition));
                         targetNeighborNodeID = (ulong)(uint)neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
-                        targetNeighborOverlayVertexID = targetNeighborChunk.edgeToOverlayVertex[targetNeighborNodeID];
+                        if (targetNeighborChunk.edgeToOverlayVertex.TryGetValue(targetNeighborNodeID, out targetNeighborOverlayVertexID) == false)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
@@ -576,6 +590,25 @@ namespace MultiLevelPathfinding
                     }
                 }
             }
+        }
+
+        private void drawEdgesVertex(int vertexID, int chunkID)
+        {
+            var targetNeighborChunk = graph.GetChunk(chunkID);
+            var targetVertex = targetNeighborChunk.vertices[vertexID];
+            var (tx, ty) = fromGridPosition(targetVertex.GridPosition);
+            for (var k = targetVertex.EdgeOffset; k < targetNeighborChunk.vertices[vertexID + 1].EdgeOffset; k++)
+            {
+                var edge = targetNeighborChunk.edges[targetNeighborChunk.vertexEdgeMapping[k]];
+                var edgeTarget = edge.FromVertex == vertexID ? edge.ToVertex : edge.FromVertex;
+                var (hx, hy) = fromGridPosition(edgeTarget == -1 ? edge.ToVertexGridPosition : targetNeighborChunk.vertices[edgeTarget].GridPosition);
+                DebugDrawer.Draw(new Vector2Int(tx, ty), new Vector2Int(hx, hy), Color.white);
+            }
+        }
+
+        private (int, int) fromGridPosition(int gridPosition)
+        {
+            return (gridPosition / graph.sizeY, gridPosition % graph.sizeY);
         }
 
         private GraphNode getNodeOverlay(int vertexID, int chunkID, int queryLevel)

@@ -1,6 +1,5 @@
 ﻿using Pathfinding;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace MultiLevelPathfinding
@@ -15,9 +14,9 @@ namespace MultiLevelPathfinding
 
         public static int[] LevelDimensions = new int[]
         {
-            32,
-            64,
-            128
+            //32,
+            //64,
+            256
         };
 
         private IGrid grid;
