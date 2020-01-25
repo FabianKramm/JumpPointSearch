@@ -28,6 +28,9 @@ namespace MultiLevelPathfinding
 
         public OverlayGraph graph;
 
+
+        public int expandedNodes = 0;
+
         private ulong startCellNumber;
         private ulong targetCellNumber;
 
@@ -132,7 +135,7 @@ namespace MultiLevelPathfinding
                 }
             }
 
-            Debug.Log("Found path in " + ticks + " ticks");
+            Debug.Log("Found path in " + ticks + " ticks and " + expandedNodes + " expanded nodes");
 
             if (middleNode == null)
                 return null;
@@ -182,7 +185,7 @@ namespace MultiLevelPathfinding
                 if (queryLevel == 0)
                 {
                     // Get the graph node
-                    var node = getNode<int>(nodeLookup, edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition, edgeTargetVertexID, edgeTargetChunkID, 0);
+                    var node = getNodeGraph(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition, edgeTargetVertexID, edgeTargetChunkID);
 
                     // The new distance of this edge
                     var newDist = min.CostA + edge.Cost;
@@ -214,11 +217,11 @@ namespace MultiLevelPathfinding
                 // We go to the overlay graph
                 else
                 {
-                    ulong overlayID = (ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32 | (uint)chunk.vertices[min.VertexID].GridPosition;
+                    var overlayID = ((ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32) | (uint)chunk.vertices[min.VertexID].GridPosition;
                     var overlayVertex = edgeTargetChunk.edgeToOverlayVertex[overlayID];
 
                     // Get the overlay node
-                    var node = getNode<ulong>(overlayNodeLookup, overlayID, overlayVertex, edgeTargetChunkID, queryLevel);
+                    var node = getNodeOverlay(overlayVertex, edgeTargetChunkID, queryLevel);
 
                     // The new distance of this edge
                     var newDist = min.CostA + edge.Cost;
@@ -268,7 +271,7 @@ namespace MultiLevelPathfinding
                 if (queryLevel == 0)
                 {
                     // Get the graph node
-                    var node = getNode<int>(nodeLookup, edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition, edgeTargetVertexID, edgeTargetChunkID, 0);
+                    var node = getNodeGraph(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition, edgeTargetVertexID, edgeTargetChunkID);
 
                     // The new distance of this edge
                     var newDist = min.CostB + edge.Cost;
@@ -300,11 +303,11 @@ namespace MultiLevelPathfinding
                 // We go to the overlay graph
                 else
                 {
-                    ulong overlayID = (ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32 | (uint)chunk.vertices[min.VertexID].GridPosition;
+                    var overlayID = ((ulong)(uint)(edgeTargetChunk.vertices[edgeTargetVertexID].GridPosition) << 32) | (uint)chunk.vertices[min.VertexID].GridPosition;
                     var overlayVertex = edgeTargetChunk.edgeToOverlayVertex[overlayID];
 
                     // Get the overlay node
-                    var node = getNode<ulong>(overlayNodeLookup, overlayID, overlayVertex, edgeTargetChunkID, queryLevel);
+                    var node = getNodeOverlay(overlayVertex, edgeTargetChunkID, queryLevel);
 
                     // The new distance of this edge
                     var newDist = min.CostB + edge.Cost;
@@ -345,24 +348,22 @@ namespace MultiLevelPathfinding
             for (var i = 0; i < overlayVertex.OverlayEdges[min.QueryLevel - 1].Count; i++)
             {
                 var overlayEdge = overlayVertex.OverlayEdges[min.QueryLevel - 1][i];
-                ulong overlayNodeID;
                 int neighborOverlayVertexID;
                 OverlayGraphChunk neighborChunk;
                 if (overlayEdge.NeighborOverlayVertex == -1)
                 {
                     neighborChunk = graph.GetChunk(graph.GetChunkID(chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition));
-                    overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
+                    var overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
                     neighborOverlayVertexID = neighborChunk.edgeToOverlayVertex[overlayNodeID];
                 }
                 else
                 {
                     neighborOverlayVertexID = overlayEdge.NeighborOverlayVertex;
                     neighborChunk = chunk;
-                    overlayNodeID = (ulong)(uint)chunk.vertices[chunk.overlayVertices[overlayEdge.NeighborOverlayVertex].OriginalVertex].GridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
                 }
 
                 // Get the overlay node
-                var node = getNode<ulong>(overlayNodeLookup, overlayNodeID, neighborOverlayVertexID, neighborChunk.chunkNumber, min.QueryLevel);
+                var node = getNodeOverlay(neighborOverlayVertexID, neighborChunk.chunkNumber, min.QueryLevel);
                 var newDist = min.CostA + overlayEdge.Cost;
                 if (node.isOpenA() == false || newDist < node.CostA)
                 {
@@ -379,31 +380,29 @@ namespace MultiLevelPathfinding
 
                     // Traverse the overlay node to the next cell
                     var neighborOverlayVertex = neighborChunk.overlayVertices[neighborOverlayVertexID];
-                    ulong targetNeighborNodeID;
                     int targetNeighborOverlayVertexID;
                     OverlayGraphChunk targetNeighborChunk;
                     if (neighborOverlayVertex.NeighborOverlayVertex == -1)
                     {
                         targetNeighborChunk = graph.GetChunk(graph.GetChunkID(neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition));
-                        targetNeighborNodeID = (ulong)(uint)neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
+                        var targetNeighborNodeID = (ulong)(uint)neighborChunk.edges[neighborOverlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
                         targetNeighborOverlayVertexID = targetNeighborChunk.edgeToOverlayVertex[targetNeighborNodeID];
                     }
                     else
                     {
                         targetNeighborOverlayVertexID = neighborOverlayVertex.NeighborOverlayVertex;
                         targetNeighborChunk = neighborChunk;
-                        targetNeighborNodeID = (ulong)(uint)neighborChunk.vertices[neighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex].GridPosition << 32 | (uint)neighborChunk.vertices[neighborOverlayVertex.OriginalVertex].GridPosition;
                     }
 
                     // Get the overlay node
-                    var targetNeighborNode = getNode<ulong>(overlayNodeLookup, targetNeighborNodeID, targetNeighborOverlayVertexID, targetNeighborChunk.chunkNumber, min.QueryLevel);
+                    var targetNeighborNode = getNodeOverlay(targetNeighborOverlayVertexID, targetNeighborChunk.chunkNumber, min.QueryLevel);
                     newDist = node.CostA + neighborChunk.edges[neighborOverlayVertex.OriginalEdge].Cost;
                     var queryLevel = OverlayGraphUtilities.GetQueryLevel(startCellNumber, targetCellNumber, targetNeighborChunk.vertices[targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex].CellNumber, graph.offset);
                     // We are back on the base graph
                     if (queryLevel == 0)
                     {
                         var originalVertex = targetNeighborChunk.vertices[targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex];
-                        var originalNode = getNode(nodeLookup, originalVertex.GridPosition, targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex, targetNeighborChunk.chunkNumber, 0);
+                        var originalNode = getNodeGraph(originalVertex.GridPosition, targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex, targetNeighborChunk.chunkNumber);
 
                         if (originalNode.isOpenA() == false || newDist < originalNode.CostA)
                         {
@@ -464,28 +463,26 @@ namespace MultiLevelPathfinding
             var min = backwardQueueOverlay.Remove();
             var chunk = graph.GetChunk(min.ChunkID);
             var overlayVertex = chunk.overlayVertices[min.VertexID];
-
             for (var i = 0; i < overlayVertex.OverlayEdges[min.QueryLevel - 1].Count; i++)
             {
+
                 var overlayEdge = overlayVertex.OverlayEdges[min.QueryLevel - 1][i];
-                ulong overlayNodeID;
                 int neighborOverlayVertexID;
                 OverlayGraphChunk neighborChunk;
                 if (overlayEdge.NeighborOverlayVertex == -1)
                 {
                     neighborChunk = graph.GetChunk(graph.GetChunkID(chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition));
-                    overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
+                    var overlayNodeID = (ulong)(uint)chunk.edges[overlayVertex.OriginalEdge].ToVertexGridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
                     neighborOverlayVertexID = neighborChunk.edgeToOverlayVertex[overlayNodeID];
                 }
                 else
                 {
                     neighborOverlayVertexID = overlayEdge.NeighborOverlayVertex;
                     neighborChunk = chunk;
-                    overlayNodeID = (ulong)(uint)chunk.vertices[chunk.overlayVertices[overlayEdge.NeighborOverlayVertex].OriginalVertex].GridPosition << 32 | (uint)chunk.vertices[overlayVertex.OriginalVertex].GridPosition;
                 }
 
                 // Get the overlay node
-                var node = getNode<ulong>(overlayNodeLookup, overlayNodeID, neighborOverlayVertexID, neighborChunk.chunkNumber, min.QueryLevel);
+                var node = getNodeOverlay(neighborOverlayVertexID, neighborChunk.chunkNumber, min.QueryLevel);
                 var newDist = min.CostB + overlayEdge.Cost;
                 if (node.isOpenB() == false || newDist < node.CostB)
                 {
@@ -519,14 +516,14 @@ namespace MultiLevelPathfinding
                     }
 
                     // Get the overlay node
-                    var targetNeighborNode = getNode<ulong>(overlayNodeLookup, targetNeighborNodeID, targetNeighborOverlayVertexID, targetNeighborChunk.chunkNumber, min.QueryLevel);
+                    var targetNeighborNode = getNodeOverlay(targetNeighborOverlayVertexID, targetNeighborChunk.chunkNumber, min.QueryLevel);
                     newDist = node.CostB + neighborChunk.edges[neighborOverlayVertex.OriginalEdge].Cost;
                     var queryLevel = OverlayGraphUtilities.GetQueryLevel(startCellNumber, targetCellNumber, targetNeighborChunk.vertices[targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex].CellNumber, graph.offset);
                     // We are back on the base graph
                     if (queryLevel == 0)
                     {
                         var originalVertex = targetNeighborChunk.vertices[targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex];
-                        var originalNode = getNode(nodeLookup, originalVertex.GridPosition, targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex, targetNeighborChunk.chunkNumber, 0);
+                        var originalNode = getNodeGraph(originalVertex.GridPosition, targetNeighborChunk.overlayVertices[targetNeighborOverlayVertexID].OriginalVertex, targetNeighborChunk.chunkNumber);
 
                         if (originalNode.isOpenB() == false || newDist < originalNode.CostB)
                         {
@@ -581,9 +578,10 @@ namespace MultiLevelPathfinding
             }
         }
 
-        private GraphNode getNode<T>(Dictionary<T, GraphNode> dict, T ID, int vertexID, int chunkID, int queryLevel)
+        private GraphNode getNodeOverlay(int vertexID, int chunkID, int queryLevel)
         {
-            if (dict.TryGetValue(ID, out GraphNode targetNeighborNode) == false)
+            var dictID = ((ulong)(uint)vertexID << 32) | (uint)chunkID;
+            if (overlayNodeLookup.TryGetValue(dictID, out GraphNode targetNeighborNode) == false)
             {
                 targetNeighborNode = new GraphNode
                 {
@@ -594,7 +592,28 @@ namespace MultiLevelPathfinding
                     QueryLevel = queryLevel,
                 };
 
-                dict[ID] = targetNeighborNode;
+                expandedNodes++;
+                overlayNodeLookup[dictID] = targetNeighborNode;
+            }
+
+            return targetNeighborNode;
+        }
+
+        private GraphNode getNodeGraph(int gridPosition, int vertexID, int chunkID)
+        {
+            if (nodeLookup.TryGetValue(gridPosition, out GraphNode targetNeighborNode) == false)
+            {
+                targetNeighborNode = new GraphNode
+                {
+                    VertexID = vertexID,
+                    ChunkID = chunkID,
+                    CostA = float.PositiveInfinity,
+                    CostB = float.PositiveInfinity,
+                    QueryLevel = 0,
+                };
+
+                expandedNodes++;
+                nodeLookup[gridPosition] = targetNeighborNode;
             }
 
             return targetNeighborNode;

@@ -56,6 +56,8 @@ namespace Pathfinding
         protected int sizeY;
         protected Dictionary<long, Node> nodes;
 
+        public int expandedNodes = 0;
+
         protected Node middleNode;
         protected float bestPathLength;
 
@@ -90,7 +92,7 @@ namespace Pathfinding
                 var mtmp = openA.Peek().costA + openB.Peek().costB;
                 if (mtmp >= bestPathLength)
                 {
-                    Debug.Log("Found path in " + ticks + " ticks");
+                    Debug.Log("Found path in " + ticks + " ticks " + expandedNodes + " expanded nodes");
                     return tracebackPath(middleNode);
                 }
                 if (mtmp >= upperBound)
@@ -104,6 +106,7 @@ namespace Pathfinding
                 mtmp = openA.Peek().costA + openB.Peek().costB;
                 if (mtmp >= bestPathLength)
                 {
+                    Debug.Log("Found path in " + ticks + " ticks " + expandedNodes + " expanded nodes");
                     return tracebackPath(middleNode);
                 }
                 if (mtmp >= upperBound)
@@ -259,6 +262,7 @@ namespace Pathfinding
                 return node;
 
             nodes[arrayPos] = new Node(x, y);
+            expandedNodes++;
             // grid[arrayPos] = NodePool.NewNode(x, y);
             return nodes[arrayPos];
         }
