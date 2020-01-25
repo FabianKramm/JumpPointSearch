@@ -150,7 +150,7 @@ public class UIController : MonoBehaviour
         List<ChunkedPathFinding.GraphPathfinder.GraphNode> path;
         var pathfinder = new ChunkedPathFinding.GraphPathfinder(graph);
         path = pathfinder.BidirectionalDijkstra(start.x, start.y, end.x, end.y);
-        UnityEngine.Debug.Log("MultiLayerGraph - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+        UnityEngine.Debug.Log("ChunkedGraph - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
 
         //  graph.DrawCellBorders();
         // graph.DrawOverlayGraph(1);
@@ -160,16 +160,32 @@ public class UIController : MonoBehaviour
 
         if (path != null)
         {
-            foreach (var pathTile in path)
+            for (var i = 0; i < path.Count; i++)
             {
-                var chunk = graph.GetChunk(pathTile.ChunkID);
-                int gridPosition = chunk.vertices[pathTile.VertexID].GridPosition;
-                var x = gridPosition / graph.sizeY;
-                var y = gridPosition % graph.sizeY;
-                if (x == start.x && y == start.y)
-                    continue;
-                if (x == end.x && y == end.y)
-                    continue;
+                int x;
+                int y;
+                if (i == 0)
+                {
+                    x = start.x;
+                    y = start.y;
+                }
+                else if (i == path.Count - 1)
+                {
+                    x = end.x;
+                    y = end.y;
+                }
+                else
+                {
+                    var pathTile = path[i];
+                    var chunk = graph.GetChunk(pathTile.ChunkID);
+                    int gridPosition = chunk.vertices[pathTile.VertexID].GridPosition;
+                    x = gridPosition / graph.sizeY;
+                    y = gridPosition % graph.sizeY;
+                    if (x == start.x && y == start.y)
+                        continue;
+                    if (x == end.x && y == end.y)
+                        continue;
+                }
 
                 DebugDrawer.DrawCube(new Vector2Int(x, y), Vector2Int.one, Color.blue);
             }

@@ -51,26 +51,8 @@ namespace ChunkedPathFinding
             forwardQueueGraph = new MinHeap<GraphNode, float>();
             backwardQueueGraph = new MinHeap<GraphNode, float>();
 
-            var startNodeChunkID = graph.GetChunkID(startX, startY);
-            var startNode = new GraphNode()
-            {
-                VertexID = graph.GetVertexID(startX, startY, startNodeChunkID),
-                ChunkID = startNodeChunkID,
-            };
-
-            forwardQueueGraph.Add(startNode, 0);
-
-            var targetNodeChunkID = graph.GetChunkID(targetX, targetY);
-            var targetNode = new GraphNode()
-            {
-                VertexID = graph.GetVertexID(targetX, targetY, targetNodeChunkID),
-                ChunkID = targetNodeChunkID,
-            };
-
-            backwardQueueGraph.Add(targetNode, 0);
-
-            startNode.setOpenA();
-            targetNode.setOpenB();
+            addInitialNode(startX, startY, forwardQueueGraph, false);
+            addInitialNode(targetX, targetY, backwardQueueGraph, true);
 
             middleNode = null; 
             shortestPath = float.PositiveInfinity;
@@ -105,6 +87,58 @@ namespace ChunkedPathFinding
                 return null;
 
             return tracebackPath(middleNode);
+        }
+
+        private void addInitialNode(int x, int y, MinHeap<GraphNode, float> queue, bool openB)
+        {
+            var flags = openB ? 2u : 1u;
+            var vertexID = graph.GetVertexID(x, y);
+            if (vertexID.ID != -1)
+            {
+                var node = new GraphNode()
+                {
+                    VertexID = vertexID.ID,
+                    ChunkID = vertexID.ChunkID,
+                    _flags = flags
+                };
+                
+                queue.Add(node, 0);
+            }
+            // Its not a graph node hence we add the direct h reachable
+            else
+            {
+                var node = new GraphNode()
+                {
+                    VertexID = -1,
+                    ChunkID = -1,
+                    _flags = flags
+                };
+
+                var reachable = graph.GetDirectHReachable(x, y);
+                for (var i = 0; i < reachable.Count; i++)
+                {
+                    var neighbor = new GraphNode()
+                    {
+                        VertexID = reachable[i].ID,
+                        ChunkID = reachable[i].ChunkID,
+                        _flags = flags
+                    };
+
+                    var cost = SubGoalGrid.Diagonal(x, y, reachable[i].GridPosition / graph.sizeY, reachable[i].GridPosition % graph.sizeY);
+                    if (openB)
+                    {
+                        neighbor.ParentB = node;
+                        neighbor.CostB = cost;
+                    }
+                    else
+                    {
+                        neighbor.ParentA = node;
+                        neighbor.CostA = cost;
+                    }
+
+                    queue.Add(neighbor, cost);
+                }
+            }
         }
 
         public List<GraphNode> tracebackPath(GraphNode touch)

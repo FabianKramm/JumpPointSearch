@@ -11,6 +11,7 @@ namespace ChunkedPathFinding
         {
             public int ID;
             public int ChunkID;
+            public int GridPosition;
         }
 
         private IGrid grid;
@@ -56,24 +57,39 @@ namespace ChunkedPathFinding
                 }
         }
 
-        /*
-        public bool IsSubgoal(int gridPosition)
+        public VertexID GetVertexID(int x, int y)
         {
+            var chunkID = (x / chunkSize) * chunkSizeY + (y / chunkSize);
+            if (GetChunk(chunkID).gridPositionToVertex.TryGetValue(x * sizeY + y, out int vertexID))
+            {
+                return new VertexID
+                {
+                    ID = vertexID,
+                    ChunkID = chunkID,
+                    GridPosition = x * sizeY + y,
+                };
+            }
 
+            return new VertexID
+            {
+                ID = -1
+            };
         }
 
-        public List<int> GetDirectHReachable(int x, int y)
+        public List<VertexID> GetDirectHReachable(int x, int y)
         {
-            var reachable = new List<int>();
+            var reachable = new List<VertexID>();
 
             // Get cardinal reachable
             for (int i = 0; i < 8; i++)
             {
-                var clearance = Clearance(x, y, SubGoalGrid.directions[i][0], SubGoalGrid.directions[i][1], subGoals);
+                var clearance = Clearance(x, y, SubGoalGrid.directions[i][0], SubGoalGrid.directions[i][1]);
                 var subgoal = new Position(x + clearance * SubGoalGrid.directions[i][0], y + clearance * SubGoalGrid.directions[i][1]);
-                if (grid.IsWalkable(subgoal.x, subgoal.y) && subGoals.TryGetValue(subgoal.x * sizeY + subgoal.y, out int vertexRef))
+                if (grid.IsWalkable(subgoal.x, subgoal.y))
                 {
-                    reachable.Add(vertexRef);
+                    var vertex = GetVertexID(subgoal.x, subgoal.y);
+                    if (vertex.ID != -1)
+                        reachable.Add(vertex);
                 }
             }
 
@@ -85,25 +101,35 @@ namespace ChunkedPathFinding
                     var cx = c == 0 ? SubGoalGrid.directions[d][0] : 0;
                     var cy = c == 0 ? 0 : SubGoalGrid.directions[d][1];
 
-                    var max = Clearance(x, y, cx, cy, subGoals);
-                    var diag = Clearance(x, y, SubGoalGrid.directions[d][0], SubGoalGrid.directions[d][1], subGoals);
-                    if (subGoals.ContainsKey((x + max * cx) * sizeY + (y + max * cy)))
+                    var max = Clearance(x, y, cx, cy);
+                    var diag = Clearance(x, y, SubGoalGrid.directions[d][0], SubGoalGrid.directions[d][1]);
+
+                    var mx = x + max * cx;
+                    var my = y + max * cy; 
+                    if (grid.IsWalkable(mx, my) && GetVertexID(mx, my).ID != -1)
                         max--;
-                    if (subGoals.ContainsKey((x + diag * SubGoalGrid.directions[d][0]) * sizeY + (y + diag * SubGoalGrid.directions[d][1])))
+
+                    var wx = x + diag * SubGoalGrid.directions[d][0];
+                    var wy = y + diag * SubGoalGrid.directions[d][1];
+                    if (grid.IsWalkable(wx, wy) && GetVertexID(wx, wy).ID != -1)
                         diag--;
 
                     for (int i = 1; i < diag; i++)
                     {
                         var newPosX = x + i * SubGoalGrid.directions[d][0];
                         var newPosY = y + i * SubGoalGrid.directions[d][1];
-                        var j = Clearance(newPosX, newPosY, cx, cy, subGoals);
+                        var j = Clearance(newPosX, newPosY, cx, cy);
 
                         var subGoalPosX = newPosX + j * cx;
                         var subGoalPosY = newPosY + j * cy;
-                        if (j <= max && grid.IsWalkable(subGoalPosX, subGoalPosY) && subGoals.TryGetValue(subGoalPosX * sizeY + subGoalPosY, out int vertexRef))
+                        if (j <= max && grid.IsWalkable(subGoalPosX, subGoalPosY))
                         {
-                            reachable.Add(vertexRef);
-                            j--;
+                            var vertex = GetVertexID(subGoalPosX, subGoalPosY);
+                            if (vertex.ID != -1)
+                            {
+                                reachable.Add(vertex);
+                                j--;
+                            }
                         }
                         if (j < max)
                         {
@@ -116,7 +142,7 @@ namespace ChunkedPathFinding
             return reachable;
         }
 
-        public int Clearance(int x, int y, int dx, int dy, Dictionary<int, int> subGoals)
+        public int Clearance(int x, int y, int dx, int dy)
         {
             int i = 0;
             while (true)
@@ -132,12 +158,12 @@ namespace ChunkedPathFinding
                 }
 
                 i = i + 1;
-                if (subGoals.ContainsKey((x + i * dx) * sizeY + (y + i * dy)))
+                if (GetVertexID((x + i * dx), (y + i * dy)).ID != -1)
                 {
                     return i;
                 }
             }
-        }*/
+        }
 
         public int GetChunkID(int x, int y)
         {
