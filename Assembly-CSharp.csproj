@@ -63,13 +63,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\CameraController.cs" />
-    <Compile Include="Assets\Scripts\ChunkedPathfinding\BurstGraphPathfinder.cs" />
     <Compile Include="Assets\Scripts\ChunkedPathfinding\Edge.cs" />
     <Compile Include="Assets\Scripts\ChunkedPathfinding\Graph.cs" />
     <Compile Include="Assets\Scripts\ChunkedPathfinding\GraphChunk.cs" />
     <Compile Include="Assets\Scripts\ChunkedPathfinding\GraphPathfinder.cs" />
-    <Compile Include="Assets\Scripts\ChunkedPathfinding\NativeMinHeap.cs" />
-    <Compile Include="Assets\Scripts\ChunkedPathfinding\NativeNestedArray.cs" />
     <Compile Include="Assets\Scripts\ChunkedPathfinding\Vertex.cs" />
     <Compile Include="Assets\Scripts\DebugDrawer.cs" />
     <Compile Include="Assets\Scripts\GridController.cs" />

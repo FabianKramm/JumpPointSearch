@@ -290,26 +290,6 @@ namespace ChunkedPathfinding
             }
         }
 
-        public BurstGraphPathfinder.GraphChunk ToNative(Allocator allocator)
-        {
-            var vertices = new NativeNestedArray<Vertex>(this.vertices.Length, allocator);
-            var edges = new NativeNestedArray<Edge>(this.edges.Length, allocator);
-            var gridPositionToVertex = new NativeHashMap<int, int>(this.gridPositionToVertex.Count, allocator);
-            foreach(var kv in this.gridPositionToVertex)
-            {
-                gridPositionToVertex[kv.Key] = kv.Value;
-            }
-
-            return new BurstGraphPathfinder.GraphChunk
-            {
-                vertices = vertices,
-                edges = edges,
-                gridPositionToVertex = gridPositionToVertex,
-                isLoaded = 1,
-                chunkNumber = chunkNumber
-            };
-        }
-
         public void DrawGraph()
         {
             for (var i = 0; i < vertices.Length; i++)
