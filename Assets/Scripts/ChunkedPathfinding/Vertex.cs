@@ -1,4 +1,4 @@
-﻿namespace ChunkedPathFinding
+﻿namespace ChunkedPathfinding
 {
     public struct Vertex
     {

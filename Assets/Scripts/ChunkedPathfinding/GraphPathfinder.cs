@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ChunkedPathFinding
+namespace ChunkedPathfinding
 {
     public class GraphPathfinder
     {
@@ -27,9 +27,6 @@ namespace ChunkedPathFinding
         public Graph graph;
         public int expandedNodes = 0;
 
-        private ulong startCellNumber;
-        private ulong targetCellNumber;
-
         private float shortestPath;
         private GraphNode middleNode;
         
@@ -37,7 +34,6 @@ namespace ChunkedPathFinding
 
         private MinHeap<GraphNode, float> forwardQueueGraph;
         private MinHeap<GraphNode, float> backwardQueueGraph;
-
 
         public GraphPathfinder(Graph graph)
         {

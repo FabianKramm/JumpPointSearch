@@ -108,7 +108,7 @@ public class UIController : MonoBehaviour
         DebugDrawer.Clear();
         var pathGrid = GridController.Path;
         var memoryGrid = createGraph();
-        var graph = new ChunkedPathFinding.Graph(memoryGrid, 128);
+        var graph = new ChunkedPathfinding.Graph(memoryGrid, 128);
 
         System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
         sw.Start();
@@ -145,10 +145,22 @@ public class UIController : MonoBehaviour
             return;
         }
 
+        // TODO This is a memory leak, we have to cleanup after
+        graph.ConvertChunks();
         sw.Restart();
+        
 
-        List<ChunkedPathFinding.GraphPathfinder.GraphNode> path;
-        var pathfinder = new ChunkedPathFinding.GraphPathfinder(graph);
+        List<Position> path = graph.FindWithJob(start.x, start.y, end.x, end.y);
+        UnityEngine.Debug.Log("ChunkedGraph - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
+
+        for (var i = 0; i < path.Count; i++)
+        {
+            DebugDrawer.DrawCube(new Vector2Int(path[i].x, path[i].y), Vector2Int.one, Color.blue);
+        }
+
+        /*
+        List<ChunkedPathfinding.GraphPathfinder.GraphNode> path;
+        var pathfinder = new ChunkedPathfinding.GraphPathfinder(graph);
         path = pathfinder.BidirectionalDijkstra(start.x, start.y, end.x, end.y);
         UnityEngine.Debug.Log("ChunkedGraph - Path" + (path == null ? " not " : " ") + "found in : " + sw.ElapsedMilliseconds + " ms");
 
@@ -189,7 +201,7 @@ public class UIController : MonoBehaviour
 
                 DebugDrawer.DrawCube(new Vector2Int(x, y), Vector2Int.one, Color.blue);
             }
-        }
+        }*/
     }
 
     public void FindMultiLevelPath()
