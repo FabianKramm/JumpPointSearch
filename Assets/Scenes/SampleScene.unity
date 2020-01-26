@@ -3665,7 +3665,7 @@ MonoBehaviour:
   blocked: {fileID: 11400000, guid: de8c9b03cff4feb4fbe138e63d3fe0cf, type: 2}
   start: {fileID: 11400000, guid: 5633d086938cb1944a248337daf09033, type: 2}
   end: {fileID: 11400000, guid: f9b302d521fc0bd4f90ef9b6e1e9c28c, type: 2}
-  size: {x: 512, y: 512}
+  size: {x: 128, y: 128}
 --- !u!114 &1735347090
 MonoBehaviour:
   m_ObjectHideFlags: 0

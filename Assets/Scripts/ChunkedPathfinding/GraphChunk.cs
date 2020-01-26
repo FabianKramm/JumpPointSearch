@@ -7,6 +7,44 @@ namespace ChunkedPathFinding
 {
     public class GraphChunk
     {
+        public static int[][] directions = new int[][]
+        {
+            // Cardinal Directions
+            new int[]
+            {
+                0, 1
+            },
+            new int[]
+            {
+                1, 0
+            },
+            new int[]
+            {
+                0, -1
+            },
+            new int[]
+            {
+                -1, 0
+            },
+            // Diagonal Directions
+            new int[]
+            {
+                -1, -1
+            },
+            new int[]
+            {
+                -1, 1
+            },
+            new int[]
+            {
+                1, 1
+            },
+            new int[]
+            {
+                1, -1
+            },
+        };
+
         private IGrid grid;
 
         public int chunkNumber;
@@ -15,7 +53,6 @@ namespace ChunkedPathFinding
         private int sizeY;
 
         public Vertex[] vertices;
-        public int[] vertexEdgeMapping;
         public Edge[] edges;
         
         public Dictionary<int, int> gridPositionToVertex;
@@ -66,29 +103,27 @@ namespace ChunkedPathFinding
                         continue;
 
                     var gridPosition = x * sizeY + y;
+                    var weight = grid.GetWeight(x, y);
                     for (var d = 4; d < 8; d++)
                     {
-                        if (grid.IsWalkable(x + SubGoalGrid.directions[d][0], y + SubGoalGrid.directions[d][1]) == false)
+                        if (grid.GetWeight(x + directions[d][0], y + directions[d][1]) != weight && grid.GetWeight(x + directions[d][0], y) == weight && grid.GetWeight(x, y + directions[d][1]) == weight)
                         {
-                            if (grid.IsWalkable(x + SubGoalGrid.directions[d][0], y) && grid.IsWalkable(x, y + SubGoalGrid.directions[d][1]))
+                            includingNeighborVertices.Add(new Vertex
                             {
-                                includingNeighborVertices.Add(new Vertex
+                                GridPosition = gridPosition,
+                            });
+                            includingNeighborGridPositionToVertex[gridPosition] = includingNeighborVertices.Count - 1;
+
+                            if (!(x < chunkStartX || x >= chunkEndX || y < chunkStartY || y >= chunkEndY))
+                            {
+                                vertices.Add(new Vertex()
                                 {
-                                    GridPosition = gridPosition,
+                                    GridPosition = gridPosition
                                 });
-                                includingNeighborGridPositionToVertex[gridPosition] = includingNeighborVertices.Count - 1;
-
-                                if (!(x < chunkStartX || x >= chunkEndX || y < chunkStartY || y >= chunkEndY))
-                                {
-                                    vertices.Add(new Vertex()
-                                    {
-                                        GridPosition = gridPosition
-                                    });
-                                    gridPositionToVertex[gridPosition] = vertices.Count - 1;
-                                }
-
-                                break;
+                                gridPositionToVertex[gridPosition] = vertices.Count - 1;
                             }
+
+                            break;
                         }
                     }
                 }
@@ -109,9 +144,6 @@ namespace ChunkedPathFinding
             var endY = chunkY * chunkSize + chunkSize;
 
             var edges = new List<Edge>();
-            var vertexEdgeMapping = new List<int>();
-
-            var createdEdges = new Dictionary<ulong, int>();
             for (var i = 0; i < includingNeighborVertices.Count; i++)
             {
                 var x = includingNeighborVertices[i].GridPosition / sizeY;
@@ -127,7 +159,7 @@ namespace ChunkedPathFinding
                 {
                     vertices[vID] = new Vertex
                     {
-                        EdgeOffset = vertexEdgeMapping.Count,
+                        EdgeOffset = edges.Count,
                         GridPosition = gridPosition
                     };
                 }
@@ -148,8 +180,7 @@ namespace ChunkedPathFinding
                     var isOutsideOfChunk = (ox < startX || ox >= endX || oy < startY || oy >= endY);
 
                     var edgeID = (ulong)otherSubGoal << 32 | (ulong)(uint)i;
-                    if (createdEdges.TryGetValue(edgeID, out int edgeOffset) == false)
-                    {
+
                         var toVertexID = -1;
                         if (isOutsideOfChunk)
                         {
@@ -164,27 +195,22 @@ namespace ChunkedPathFinding
                             throw new Exception("This should never happen");
                         }
 
+                        float cost = SubGoalGrid.Diagonal(x, y, ox, oy);
+                        if (grid.GetWeight(x, y) == CellType.Road && grid.GetWeight(ox, oy) == CellType.Road)
+                        {
+                            cost *= 0.5f;
+                        }
+
                         edges.Add(new Edge()
                         {
-                            FromVertex = vID,
                             ToVertex = toVertexID,
                             ToVertexGridPosition = oGridPosition,
-                            Cost = SubGoalGrid.Diagonal(x, y, ox, oy)
+                            Cost = cost
                         });
-
-                        var newEdgeID = (ulong)i << 32 | (ulong)(uint)otherSubGoal;
-                        createdEdges[newEdgeID] = edges.Count - 1;
-                        vertexEdgeMapping.Add(edges.Count - 1);
-                    }
-                    else
-                    {
-                        vertexEdgeMapping.Add(edgeOffset);
-                    }
                 }
             }
 
             this.edges = edges.ToArray();
-            this.vertexEdgeMapping = vertexEdgeMapping.ToArray();
         }
 
         public List<int> GetDirectHReachable(int x, int y, Dictionary<int, int> subGoals)
@@ -273,14 +299,14 @@ namespace ChunkedPathFinding
                 var y = vertex.GridPosition % sizeY;
 
                 DebugDrawer.DrawCube(new UnityEngine.Vector2Int(x, y), Vector2Int.one, Color.yellow);
-                var edgeEnd = (i + 1 == vertices.Length) ? vertexEdgeMapping.Length : vertices[i + 1].EdgeOffset;
+                var edgeEnd = (i + 1 == vertices.Length) ? edges.Length : vertices[i + 1].EdgeOffset;
                 if (edgeEnd == -1)
                     continue;
 
                 for (var j = vertex.EdgeOffset; j < edgeEnd; j++)
                 {
-                    var edge = edges[vertexEdgeMapping[j]];
-                    var target = edge.FromVertex == i ? edge.ToVertex : edge.FromVertex;
+                    var edge = edges[j];
+                    var target = edge.ToVertex;
                     if (target == -1)
                     {
                         var tx = edge.ToVertexGridPosition / sizeY;

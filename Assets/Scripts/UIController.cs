@@ -155,7 +155,7 @@ public class UIController : MonoBehaviour
         //  graph.DrawCellBorders();
         // graph.DrawOverlayGraph(1);
 
-        // graph.DrawGraph();
+        graph.DrawGraph();
         // overlayGraph.DrawGraph();
 
         if (path != null)

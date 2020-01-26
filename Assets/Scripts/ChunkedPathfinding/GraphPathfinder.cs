@@ -44,7 +44,7 @@ namespace ChunkedPathFinding
             this.graph = graph;
         }
 
-        public List<GraphNode> BidirectionalDijkstra(int startX, int startY, int targetX, int targetY)
+        public List<GraphNode> BidirectionalDijkstra(int startX, int startY, int targetX, int targetY, int maxTicks = 25000)
         {
             nodeLookup = new Dictionary<int, GraphNode>();
 
@@ -80,8 +80,6 @@ namespace ChunkedPathFinding
                     searchBackwardBasicGraph();
                 }
             }
-
-            Debug.Log("Found path in " + ticks + " ticks and " + expandedNodes + " expanded nodes");
 
             if (middleNode == null)
                 return null;
@@ -169,11 +167,11 @@ namespace ChunkedPathFinding
         {
             var min = forwardQueueGraph.Remove();
             var chunk = graph.GetChunk(min.ChunkID);
-            var edgeEnd = (min.VertexID + 1 == chunk.vertices.Length) ? chunk.vertexEdgeMapping.Length : chunk.vertices[min.VertexID + 1].EdgeOffset;
+            var edgeEnd = (min.VertexID + 1 == chunk.vertices.Length) ? chunk.edges.Length : chunk.vertices[min.VertexID + 1].EdgeOffset;
             for (var i = chunk.vertices[min.VertexID].EdgeOffset; i < edgeEnd; i++)
             {
-                var edge = chunk.edges[chunk.vertexEdgeMapping[i]];
-                var edgeTarget = edge.FromVertex == min.VertexID ? edge.ToVertex : edge.FromVertex;
+                var edge = chunk.edges[i];
+                var edgeTarget = edge.ToVertex;
                 var edgeTargetChunkID = edgeTarget == -1 ? graph.GetChunkID(edge.ToVertexGridPosition) : chunk.chunkNumber;
                 var edgeTargetChunk = graph.GetChunk(edgeTargetChunkID);
                 var edgeTargetVertexID = edgeTarget == -1 ? edgeTargetChunk.gridPositionToVertex[edge.ToVertexGridPosition] : edgeTarget;
@@ -214,11 +212,11 @@ namespace ChunkedPathFinding
         {
             var min = backwardQueueGraph.Remove();
             var chunk = graph.GetChunk(min.ChunkID);
-            var edgeEnd = (min.VertexID + 1 == chunk.vertices.Length) ? chunk.vertexEdgeMapping.Length : chunk.vertices[min.VertexID + 1].EdgeOffset;
+            var edgeEnd = (min.VertexID + 1 == chunk.vertices.Length) ? chunk.edges.Length : chunk.vertices[min.VertexID + 1].EdgeOffset;
             for (var i = chunk.vertices[min.VertexID].EdgeOffset; i < edgeEnd; i++)
             {
-                var edge = chunk.edges[chunk.vertexEdgeMapping[i]];
-                var edgeTarget = edge.FromVertex == min.VertexID ? edge.ToVertex : edge.FromVertex;
+                var edge = chunk.edges[i];
+                var edgeTarget = edge.ToVertex;
                 var edgeTargetChunkID = edgeTarget == -1 ? graph.GetChunkID(edge.ToVertexGridPosition) : chunk.chunkNumber;
                 var edgeTargetChunk = graph.GetChunk(edgeTargetChunkID);
                 var edgeTargetVertexID = edgeTarget == -1 ? edgeTargetChunk.gridPositionToVertex[edge.ToVertexGridPosition] : edgeTarget;
@@ -262,8 +260,8 @@ namespace ChunkedPathFinding
             var (tx, ty) = fromGridPosition(targetVertex.GridPosition);
             for (var k = targetVertex.EdgeOffset; k < targetNeighborChunk.vertices[vertexID + 1].EdgeOffset; k++)
             {
-                var edge = targetNeighborChunk.edges[targetNeighborChunk.vertexEdgeMapping[k]];
-                var edgeTarget = edge.FromVertex == vertexID ? edge.ToVertex : edge.FromVertex;
+                var edge = targetNeighborChunk.edges[k];
+                var edgeTarget = edge.ToVertex;
                 var (hx, hy) = fromGridPosition(edgeTarget == -1 ? edge.ToVertexGridPosition : targetNeighborChunk.vertices[edgeTarget].GridPosition);
                 DebugDrawer.Draw(new Vector2Int(tx, ty), new Vector2Int(hx, hy), Color.white);
             }
